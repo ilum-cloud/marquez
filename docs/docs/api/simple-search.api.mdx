@@ -1,0 +1,278 @@
+---
+id: simple-search
+title: "Simple search for datasets and jobs"
+description: "Performs a simple, fast search across datasets and jobs by name without external dependencies."
+sidebar_label: "Simple search"
+hide_title: true
+hide_table_of_contents: true
+api:
+  {
+    "operationId": "simpleSearch",
+    "parameters":
+      [
+        {
+          "name": "q",
+          "in": "query",
+          "schema":
+            {
+              "type": "string",
+              "example": "my-dataset",
+              "description": "Query string to search for in dataset and job names. Supports prefix/postfix matching (case-insensitive pattern matching).",
+            },
+          "required": true,
+        },
+        {
+          "name": "filter",
+          "in": "query",
+          "schema":
+            {
+              "type": "string",
+              "example": "dataset",
+              "description": "Filters the results by type: `dataset` or `job`. If not specified, both datasets and jobs are returned.",
+            },
+          "required": false,
+        },
+        {
+          "name": "sort",
+          "in": "query",
+          "schema":
+            {
+              "type": "string",
+              "example": "updated_at",
+              "description": "Sorts the results by `name` (alphabetical) or `updated_at` (newest first, default).",
+              "default": "updated_at",
+            },
+          "required": false,
+        },
+        {
+          "name": "limit",
+          "in": "query",
+          "description": "The maximum number of results to return. Maximum allowed is 100.",
+          "required": false,
+          "schema": { "type": "integer", "example": 20, "default": 20, "maximum": 100 },
+        },
+        {
+          "name": "namespace",
+          "in": "query",
+          "description": "Filter results to a specific namespace.",
+          "required": false,
+          "schema":
+            { "type": "string", "maxLength": 1024, "example": "my-namespace" },
+        },
+      ],
+    "description": "Performs a simple, fast search across datasets and jobs by name. This endpoint provides a lightweight alternative to the advanced search functionality and works without requiring external dependencies like Elasticsearch/OpenSearch. Results include essential metadata with references for navigation to full object details.",
+    "tags": ["Search"],
+    "responses":
+      {
+        "200":
+          {
+            "description": "OK",
+            "content":
+              {
+                "application/json":
+                  {
+                    "schema":
+                      {
+                        "type": "object",
+                        "properties":
+                          {
+                            "totalCount":
+                              {
+                                "description": "Total number of search results returned.",
+                                "type": "integer",
+                                "example": 2,
+                              },
+                            "results":
+                              {
+                                "type": "array",
+                                "items":
+                                  {
+                                    "type": "object",
+                                    "properties":
+                                      {
+                                        "type":
+                                          {
+                                            "description": "The result type.",
+                                            "type": "string",
+                                            "example": "DATASET",
+                                            "enum": ["DATASET", "JOB"],
+                                            "title": "SimpleSearchResultType",
+                                          },
+                                        "name":
+                                          {
+                                            "description": "The name of the dataset or job.",
+                                            "type": "string",
+                                            "example": "my-dataset",
+                                          },
+                                        "namespace":
+                                          {
+                                            "description": "The namespace containing the dataset or job.",
+                                            "type": "object",
+                                            "properties":
+                                              {
+                                                "value":
+                                                  {
+                                                    "description": "The namespace name.",
+                                                    "type": "string",
+                                                    "example": "my-namespace",
+                                                  },
+                                              },
+                                          },
+                                        "updatedAt":
+                                          {
+                                            "description": "The timestamp when the dataset or job was last updated.",
+                                            "type": "string",
+                                            "format": "date-time",
+                                            "example": "2023-01-01T00:00:00Z",
+                                          },
+                                      },
+                                    "title": "SimpleSearchResult",
+                                  },
+                              },
+                          },
+                        "title": "SimpleSearchResults",
+                      },
+                  },
+              },
+          },
+        "400":
+          {
+            "description": "Bad Request - Invalid query parameters",
+          },
+        "500":
+          {
+            "description": "Internal Server Error",
+          },
+      },
+    "method": "get",
+    "path": "/api/v1/search/simple",
+    "servers":
+      [
+        {
+          "url": "http://localhost:5000/api/v1",
+          "description": "Local API server",
+        },
+      ],
+    "info":
+      {
+        "title": "Marquez",
+        "version": "0.50.0",
+        "description": "Marquez is an open source **metadata service** for the **collection**, **aggregation**, and **visualization** of a data ecosystem's metadata.",
+        "license":
+          {
+            "name": "Apache 2.0",
+            "url": "http://www.apache.org/licenses/LICENSE-2.0.html",
+          },
+      },
+    "postman":
+      {
+        "name": "Simple search for datasets and jobs",
+        "description":
+          {
+            "content": "Performs a simple, fast search across datasets and jobs by name without external dependencies.",
+            "type": "text/plain",
+          },
+        "url":
+          {
+            "path": ["api", "v1", "search", "simple"],
+            "host": ["{{baseUrl}}"],
+            "query":
+              [
+                {
+                  "disabled": false,
+                  "description":
+                    { "content": "(Required) ", "type": "text/plain" },
+                  "key": "q",
+                  "value": "",
+                },
+                { "disabled": false, "key": "filter", "value": "" },
+                { "disabled": false, "key": "sort", "value": "" },
+                {
+                  "disabled": false,
+                  "description":
+                    {
+                      "content": "The maximum number of results to return. Maximum allowed is 100.",
+                      "type": "text/plain",
+                    },
+                  "key": "limit",
+                  "value": "",
+                },
+                {
+                  "disabled": false,
+                  "description":
+                    {
+                      "content": "Filter results to a specific namespace.",
+                      "type": "text/plain",
+                    },
+                  "key": "namespace",
+                  "value": "",
+                },
+              ],
+            "variable": [],
+          },
+        "header": [{ "key": "Accept", "value": "application/json" }],
+        "method": "GET",
+      },
+  }
+sidebar_class_name: "get api-method"
+info_path: docs/api/marquez
+custom_edit_url: null
+---
+
+import ApiTabs from "@theme/ApiTabs";
+import MimeTabs from "@theme/MimeTabs";
+import ParamsItem from "@theme/ParamsItem";
+import ResponseSamples from "@theme/ResponseSamples";
+import SchemaItem from "@theme/SchemaItem";
+import SchemaTabs from "@theme/SchemaTabs";
+import DiscriminatorTabs from "@theme/DiscriminatorTabs";
+import TabItem from "@theme/TabItem";
+
+## Simple search for datasets and jobs
+
+Performs a simple, fast search across datasets and jobs by name without external dependencies.
+
+<details style={{"marginBottom":"1rem"}} data-collapsed={false} open={true}><summary style={{}}><strong>Query Parameters</strong></summary><div><ul><ParamsItem className={"paramsItem"} param={{"name":"q","in":"query","schema":{"type":"string","example":"my-dataset","description":"Query string to search for in dataset and job names. Supports prefix/postfix matching (case-insensitive pattern matching)."},"required":true}}></ParamsItem><ParamsItem className={"paramsItem"} param={{"name":"filter","in":"query","schema":{"type":"string","example":"dataset","description":"Filters the results by type: `dataset` or `job`. If not specified, both datasets and jobs are returned."},"required":false}}></ParamsItem><ParamsItem className={"paramsItem"} param={{"name":"sort","in":"query","schema":{"type":"string","example":"updated_at","description":"Sorts the results by `name` (alphabetical) or `updated_at` (newest first, default).","default":"updated_at"},"required":false}}></ParamsItem><ParamsItem className={"paramsItem"} param={{"name":"limit","in":"query","description":"The maximum number of results to return. Maximum allowed is 100.","required":false,"schema":{"type":"integer","example":20,"default":20,"maximum":100}}}></ParamsItem><ParamsItem className={"paramsItem"} param={{"name":"namespace","in":"query","description":"Filter results to a specific namespace.","required":false,"schema":{"type":"string","maxLength":1024,"example":"my-namespace"}}}></ParamsItem></ul></div></details><div><ApiTabs><TabItem label={"200"} value={"200"}><div>
+
+OK
+
+</div><div><MimeTabs schemaType={"response"}><TabItem label={"application/json"} value={"application/json"}><SchemaTabs><TabItem label={"Schema"} value={"Schema"}><details style={{}} data-collapsed={false} open={true}><summary style={{"textAlign":"left"}}><strong>Schema</strong></summary><div style={{"textAlign":"left","marginLeft":"1rem"}}></div><ul style={{"marginLeft":"1rem"}}><SchemaItem collapsible={false} name={"totalCount"} required={false} schemaName={"integer"} qualifierMessage={undefined} schema={{"description":"Total number of search results returned.","type":"integer","example":2}}></SchemaItem><SchemaItem collapsible={true} className={"schemaItem"}><details style={{}}><summary style={{}}><strong>results</strong><span style={{"opacity":"0.6"}}> object[]</span></summary><div style={{"marginLeft":"1rem"}}><li><div style={{"fontSize":"var(--ifm-code-font-size)","opacity":"0.6","marginLeft":"-.5rem","paddingBottom":".5rem"}}>Array [</div></li><SchemaItem collapsible={false} name={"type"} required={false} schemaName={"SimpleSearchResultType"} qualifierMessage={"**Possible values:** [`DATASET`, `JOB`]"} schema={{"description":"The result type.","type":"string","example":"DATASET","enum":["DATASET","JOB"],"title":"SimpleSearchResultType"}}></SchemaItem><SchemaItem collapsible={false} name={"name"} required={false} schemaName={"string"} qualifierMessage={undefined} schema={{"description":"The name of the dataset or job.","type":"string","example":"my-dataset"}}></SchemaItem><SchemaItem collapsible={true} className={"schemaItem"}><details style={{}}><summary style={{}}><strong>namespace</strong><span style={{"opacity":"0.6"}}> object</span></summary><div style={{"marginLeft":"1rem"}}><div style={{"marginTop":".5rem","marginBottom":".5rem"}}>
+
+The namespace containing the dataset or job.
+
+</div><SchemaItem collapsible={false} name={"value"} required={false} schemaName={"string"} qualifierMessage={undefined} schema={{"description":"The namespace name.","type":"string","example":"my-namespace"}}></SchemaItem></div></details></SchemaItem><SchemaItem collapsible={false} name={"updatedAt"} required={false} schemaName={"date-time"} qualifierMessage={undefined} schema={{"description":"The timestamp when the dataset or job was last updated.","type":"string","format":"date-time","example":"2023-01-01T00:00:00Z"}}></SchemaItem><li><div style={{"fontSize":"var(--ifm-code-font-size)","opacity":"0.6","marginLeft":"-.5rem"}}>]</div></li></div></details></SchemaItem></ul></details></TabItem><TabItem label={"Example (from schema)"} value={"Example (from schema)"}><ResponseSamples responseExample={"{\n  \"totalCount\": 2,\n  \"results\": [\n    {\n      \"type\": \"DATASET\",\n      \"name\": \"my-dataset\",\n      \"namespace\": {\n        \"value\": \"my-namespace\"\n      },\n      \"updatedAt\": \"2023-01-01T00:00:00Z\"\n    }\n  ]\n}"} language={"json"}></ResponseSamples></TabItem></SchemaTabs></TabItem></MimeTabs></div></TabItem><TabItem label={"400"} value={"400"}><div>
+
+Bad Request - Invalid query parameters
+
+</div></TabItem><TabItem label={"500"} value={"500"}><div>
+
+Internal Server Error
+
+</div></TabItem></ApiTabs></div>
+
+## Features
+
+- **Fast Performance**: Optimized SQL queries with trigram indexes for efficient pattern matching
+- **No External Dependencies**: Works without Elasticsearch/OpenSearch
+- **Simple Results**: Returns essential metadata with references for UI navigation
+- **Flexible Sorting**: Sort by name (alphabetical) or updated_at (newest first, default)
+- **Type Filtering**: Filter results by datasets, jobs, or both
+- **Namespace Filtering**: Restrict search to specific namespaces
+- **Pattern Matching**: Supports prefix/postfix matching for flexible search
+
+## Usage Examples
+
+### Basic search
+```bash
+curl "http://localhost:8080/api/v1/search/simple?q=my-data"
+```
+
+### Search only datasets, sorted by name
+```bash
+curl "http://localhost:8080/api/v1/search/simple?q=analytics&filter=dataset&sort=name"
+```
+
+### Search within a specific namespace, limit results
+```bash
+curl "http://localhost:8080/api/v1/search/simple?q=pipeline&namespace=production&limit=10"
+```

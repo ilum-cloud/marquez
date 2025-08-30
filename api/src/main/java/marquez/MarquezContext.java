@@ -18,6 +18,7 @@ import marquez.api.JobResource;
 import marquez.api.NamespaceResource;
 import marquez.api.OpenLineageResource;
 import marquez.api.SearchResource;
+import marquez.api.SimpleSearchResource;
 import marquez.api.SourceResource;
 import marquez.api.StatsResource;
 import marquez.api.TagResource;
@@ -39,6 +40,7 @@ import marquez.db.RunDao;
 import marquez.db.RunFacetsDao;
 import marquez.db.RunStateDao;
 import marquez.db.SearchDao;
+import marquez.db.SimpleSearchDao;
 import marquez.db.SourceDao;
 import marquez.db.StatsDao;
 import marquez.db.TagDao;
@@ -82,6 +84,7 @@ public final class MarquezContext {
   @Getter private final LineageDao lineageDao;
   @Getter private final ColumnLineageDao columnLineageDao;
   @Getter private final SearchDao searchDao;
+  @Getter private final SimpleSearchDao simpleSearchDao;
   @Getter private final StatsDao statsDao;
   @Getter private final List<RunTransitionListener> runTransitionListeners;
 
@@ -105,6 +108,7 @@ public final class MarquezContext {
   @Getter private final OpenLineageResource openLineageResource;
   @Getter private final marquez.api.v2beta.SearchResource v2BetasearchResource;
   @Getter private final SearchResource searchResource;
+  @Getter private final SimpleSearchResource simpleSearchResource;
   @Getter private final StatsResource opsResource;
   @Getter private final ImmutableList<Object> resources;
   @Getter private final JdbiExceptionExceptionMapper jdbiException;
@@ -140,6 +144,7 @@ public final class MarquezContext {
     this.lineageDao = jdbi.onDemand(LineageDao.class);
     this.columnLineageDao = jdbi.onDemand(ColumnLineageDao.class);
     this.searchDao = jdbi.onDemand(SearchDao.class);
+    this.simpleSearchDao = jdbi.onDemand(SimpleSearchDao.class);
     this.statsDao = jdbi.onDemand(StatsDao.class);
     this.runTransitionListeners = runTransitionListeners;
 
@@ -182,6 +187,7 @@ public final class MarquezContext {
     this.tagResource = new TagResource(serviceFactory);
     this.openLineageResource = new OpenLineageResource(serviceFactory, openLineageDao);
     this.searchResource = new SearchResource(searchDao);
+    this.simpleSearchResource = new SimpleSearchResource(simpleSearchDao);
     this.opsResource = new StatsResource(serviceFactory);
     this.v2BetasearchResource = new marquez.api.v2beta.SearchResource(serviceFactory);
 
@@ -197,6 +203,7 @@ public final class MarquezContext {
             jsonException,
             openLineageResource,
             searchResource,
+            simpleSearchResource,
             v2BetasearchResource,
             opsResource);
 
