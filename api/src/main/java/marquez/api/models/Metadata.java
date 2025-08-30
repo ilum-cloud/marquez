@@ -47,14 +47,14 @@ import marquez.common.models.SourceName;
 public final class Metadata {
   private Metadata() {}
 
-  /** Represents the parent run associated with {@link Metadata.Run}. */
+  /** Represents the parent run associated with {@link Run}. */
   @Builder
   @ToString
   public static final class ParentRun {
     @Getter private final RunId id; // Unique parent run ID.
-    @Getter private final ParentRun.Job job;
+    @Getter private final Job job;
 
-    /** Represents the parent job (if present) associated with {@link Metadata.Run}. */
+    /** Represents the parent job (if present) associated with {@link Run}. */
     @Builder
     @ToString
     public static final class Job {
@@ -176,7 +176,7 @@ public final class Metadata {
 
     static Job newJobWith(@NonNull final OpenLineage.Job job, @NonNull Metadata.IO io) {
       final JobId jobId = JobId.of(NamespaceName.of(job.getNamespace()), JobName.of(job.getName()));
-      final Job.JobBuilder jobBuilder =
+      final JobBuilder jobBuilder =
           Job.builder()
               .id(jobId)
               .type(JobType.BATCH)
@@ -279,15 +279,15 @@ public final class Metadata {
       final DatasetId datasetId =
           new DatasetId(
               NamespaceName.of(dataset.getNamespace()), DatasetName.of(dataset.getName()));
-      final Dataset.DatasetBuilder datasetBuilder =
+      final DatasetBuilder datasetBuilder =
           Dataset.builder()
               .id(datasetId)
               .type(DB_TABLE)
               .name(datasetId.getName())
               .namespace(datasetId.getNamespace());
 
-      final Dataset.Source source = Facets.sourceFor(dataset);
-      final Optional<Dataset.Schema> datasetSchema = Facets.schemaFor(dataset);
+      final Source source = Facets.sourceFor(dataset);
+      final Optional<Schema> datasetSchema = Facets.schemaFor(dataset);
       final DatasetVersionId datasetVersionId =
           VersionId.forDataset(datasetId, datasetSchema.orElse(null), source);
 
@@ -297,7 +297,7 @@ public final class Metadata {
     @Builder
     @ToString
     public static class Schema {
-      @Getter @NonNull private final ImmutableSet<Schema.Field> fields;
+      @Getter @NonNull private final ImmutableSet<Field> fields;
 
       @Builder
       @ToString
@@ -320,7 +320,7 @@ public final class Metadata {
       @Getter private final URI connectionUrl;
     }
 
-    public Optional<Dataset.Schema> getSchema() {
+    public Optional<Schema> getSchema() {
       return Optional.ofNullable(schema);
     }
   }
@@ -399,37 +399,37 @@ public final class Metadata {
     Facets() {}
 
     /**
-     * Returns {@link Metadata.ParentRun} (if present) for the given {@link OpenLineage.Run} object.
+     * Returns {@link ParentRun} (if present) for the given {@link OpenLineage.Run} object.
      *
      * @see <a href="https://openlineage.io/spec/facets/1-0-1/ParentRunFacet.json">ParentRunFacet/a>
      */
     @SuppressWarnings("unchecked") // Safely cast
-    static Optional<Metadata.ParentRun> parentRunFor(@NonNull final OpenLineage.Run run) {
+    static Optional<ParentRun> parentRunFor(@NonNull final OpenLineage.Run run) {
       return Optional.ofNullable(run.getFacets())
           .map(OpenLineage.RunFacets::getAdditionalProperties)
-          .map(runFacets -> runFacets.get(Facets.Run.PARENT))
+          .map(runFacets -> runFacets.get(Run.PARENT))
           .map(OpenLineage.RunFacet::getAdditionalProperties)
           .flatMap(
               parentRunFacet -> {
                 // Extract runID for parent run (required)
                 final RunId parentRunId =
-                    Optional.ofNullable(parentRunFacet.get(Facets.Run.PARENT_RUN))
+                    Optional.ofNullable(parentRunFacet.get(Run.PARENT_RUN))
                         .map(
                             parentRun ->
-                                ((Map<String, Object>) parentRun).get(Facets.Run.PARENT_RUN_ID))
+                                ((Map<String, Object>) parentRun).get(Run.PARENT_RUN_ID))
                         .map(String::valueOf)
                         .map(RunId::new)
                         .orElseThrow(() -> new FacetNotValid.MissingRunIdForParent(run.getRunId()));
                 // Extract job for parent (required).
                 final ParentRun.Job parentJob =
-                    Optional.ofNullable(parentRunFacet.get(Facets.Run.PARENT_JOB))
+                    Optional.ofNullable(parentRunFacet.get(Run.PARENT_JOB))
                         .map(
                             parentJobForRun -> {
                               // Extract parent job namespace (required).
                               final String parentJobNamespace =
                                   Optional.ofNullable(
                                           ((Map<String, Object>) parentJobForRun)
-                                              .get(Facets.Run.PARENT_JOB_NAMESPACE))
+                                              .get(Run.PARENT_JOB_NAMESPACE))
                                       .map(String::valueOf)
                                       .orElseThrow(
                                           () ->
@@ -439,7 +439,7 @@ public final class Metadata {
                               final String parentJobName =
                                   Optional.ofNullable(
                                           ((Map<String, Object>) parentJobForRun)
-                                              .get(Facets.Run.PARENT_JOB_NAME))
+                                              .get(Run.PARENT_JOB_NAME))
                                       .map(String::valueOf)
                                       .orElseThrow(
                                           () ->
@@ -447,14 +447,14 @@ public final class Metadata {
                                                   run.getRunId()));
                               // ParentRun.Job instance with namespace and name of parent job
                               // (required).
-                              return Metadata.ParentRun.Job.of(
+                              return ParentRun.Job.of(
                                   JobId.of(parentJobNamespace, parentJobName));
                             })
                         .orElseThrow(() -> new FacetNotValid.MissingJobForParent(run.getRunId()));
                 // Metadata.ParentRun instance (if present) with unique run ID and job of parent run
                 // (required).
                 return Optional.of(
-                    Metadata.ParentRun.builder().id(parentRunId).job(parentJob).build());
+                    ParentRun.builder().id(parentRunId).job(parentJob).build());
               });
     }
 
@@ -467,13 +467,13 @@ public final class Metadata {
     static Optional<Instant> nominalStartTimeFor(@NonNull final OpenLineage.Run run) {
       return Optional.ofNullable(run.getFacets())
           .map(OpenLineage.RunFacets::getAdditionalProperties)
-          .map(facets -> facets.get(Facets.Run.NOMINAL_TIME))
+          .map(facets -> facets.get(Run.NOMINAL_TIME))
           .map(OpenLineage.RunFacet::getAdditionalProperties)
           .map(
               nominalTimeFacet -> {
                 // Extract nominal start time for run (required).
                 final String nominalStartTime =
-                    Optional.ofNullable(nominalTimeFacet.get(Facets.Run.NOMINAL_START_TIME))
+                    Optional.ofNullable(nominalTimeFacet.get(Run.NOMINAL_START_TIME))
                         .map(String::valueOf)
                         .orElseThrow(
                             () -> new FacetNotValid.MissingNominalStartTimeForRun(run.getRunId()));
@@ -492,9 +492,9 @@ public final class Metadata {
     static Optional<Instant> nominalEndTimeFor(@NonNull final OpenLineage.Run run) {
       return Optional.ofNullable(run.getFacets())
           .map(OpenLineage.RunFacets::getAdditionalProperties)
-          .map(runFacets -> runFacets.get(Facets.Run.NOMINAL_TIME))
+          .map(runFacets -> runFacets.get(Run.NOMINAL_TIME))
           .map(OpenLineage.RunFacet::getAdditionalProperties)
-          .map(nominalTimeFacet -> nominalTimeFacet.get(Facets.Run.NOMINAL_END_TIME))
+          .map(nominalTimeFacet -> nominalTimeFacet.get(Run.NOMINAL_END_TIME))
           .map(
               nominalEndTime ->
                   ZonedDateTime.parse(
@@ -512,19 +512,19 @@ public final class Metadata {
     static Optional<Metadata.Job.SourceCode> sourceCodeFor(@NonNull final OpenLineage.Job job) {
       return Optional.ofNullable(job.getFacets())
           .map(OpenLineage.JobFacets::getAdditionalProperties)
-          .map(jobFacets -> jobFacets.get(Facets.Job.SOURCE_CODE))
+          .map(jobFacets -> jobFacets.get(Job.SOURCE_CODE))
           .map(OpenLineage.JobFacet::getAdditionalProperties)
           .flatMap(
               sourceCodeFacet -> {
                 // Extract source code language for job (required).
                 final String sourceCodeLanguage =
-                    Optional.ofNullable(sourceCodeFacet.get(Facets.Job.SOURCE_CODE_LANGUAGE))
+                    Optional.ofNullable(sourceCodeFacet.get(Job.SOURCE_CODE_LANGUAGE))
                         .map(String::valueOf)
                         .orElseThrow(
                             () -> new FacetNotValid.MissingSourceCodeLanguageForJob(job.getName()));
                 // Extract source code for job (required).
                 final String sourceCode =
-                    Optional.ofNullable(sourceCodeFacet.get(Facets.Job.SOURCE_CODE))
+                    Optional.ofNullable(sourceCodeFacet.get(Job.SOURCE_CODE))
                         .map(String::valueOf)
                         .orElseThrow(
                             () -> new FacetNotValid.MissingSourceCodeForJob(job.getName()));
@@ -549,20 +549,20 @@ public final class Metadata {
         @NonNull final OpenLineage.Job job) {
       return Optional.ofNullable(job.getFacets())
           .map(OpenLineage.JobFacets::getAdditionalProperties)
-          .map(jobFacets -> jobFacets.get(Facets.Job.SOURCE_CODE_LOCATION))
+          .map(jobFacets -> jobFacets.get(Job.SOURCE_CODE_LOCATION))
           .map(OpenLineage.JobFacet::getAdditionalProperties)
           .flatMap(
               sourceCodeLocationFacet -> {
                 // Extract source code type for job location (required).
                 final String sourceCodeType =
-                    Optional.ofNullable(sourceCodeLocationFacet.get(Facets.Job.SOURCE_CODE_TYPE))
+                    Optional.ofNullable(sourceCodeLocationFacet.get(Job.SOURCE_CODE_TYPE))
                         .map(String::valueOf)
                         .orElseThrow(
                             () -> new FacetNotValid.MissingSourceCodeTypeForJob(job.getName()));
 
                 // Extract source code URL for job (required).
                 final URL sourceCodeUrl =
-                    Optional.ofNullable(sourceCodeLocationFacet.get(Facets.Job.SOURCE_CODE_URL))
+                    Optional.ofNullable(sourceCodeLocationFacet.get(Job.SOURCE_CODE_URL))
                         .map(String::valueOf)
                         .map(Utils::toUrl)
                         .orElseThrow(
@@ -571,28 +571,28 @@ public final class Metadata {
                 // Extract source code repo URL for job (optional).
                 final Optional<URL> sourceCodeRepoUrl =
                     Optional.ofNullable(
-                            sourceCodeLocationFacet.get(Facets.Job.SOURCE_CODE_REPO_URL))
+                            sourceCodeLocationFacet.get(Job.SOURCE_CODE_REPO_URL))
                         .map(String::valueOf)
                         .map(Utils::toUrl);
 
                 // Extract source code path in repo for job (optional).
                 final Optional<String> sourceCodePath =
-                    Optional.ofNullable(sourceCodeLocationFacet.get(Facets.Job.SOURCE_CODE_PATH))
+                    Optional.ofNullable(sourceCodeLocationFacet.get(Job.SOURCE_CODE_PATH))
                         .map(String::valueOf);
 
                 // Extract source code version for job (optional).
                 final Optional<String> sourceCodeVersion =
-                    Optional.ofNullable(sourceCodeLocationFacet.get(Facets.Job.SOURCE_CODE_VERSION))
+                    Optional.ofNullable(sourceCodeLocationFacet.get(Job.SOURCE_CODE_VERSION))
                         .map(String::valueOf);
 
                 // Extract source code tag for job (optional).
                 final Optional<String> sourceCodeTag =
-                    Optional.ofNullable(sourceCodeLocationFacet.get(Facets.Job.SOURCE_CODE_TAG))
+                    Optional.ofNullable(sourceCodeLocationFacet.get(Job.SOURCE_CODE_TAG))
                         .map(String::valueOf);
 
                 // Extract source code branch for job (optional).
                 final Optional<String> sourceCodeBranch =
-                    Optional.ofNullable(sourceCodeLocationFacet.get(Facets.Job.SOURCE_CODE_BRANCH))
+                    Optional.ofNullable(sourceCodeLocationFacet.get(Job.SOURCE_CODE_BRANCH))
                         .map(String::valueOf);
 
                 // Metadata.Job.SourceCodeLocation instance (if present) with source code type and
@@ -623,12 +623,12 @@ public final class Metadata {
     static Optional<String> descriptionFor(@NonNull final OpenLineage.Job job) {
       return Optional.ofNullable(job.getFacets())
           .map(OpenLineage.JobFacets::getAdditionalProperties)
-          .map(jobFacets -> jobFacets.get(Facets.Job.DOCUMENTATION))
+          .map(jobFacets -> jobFacets.get(Job.DOCUMENTATION))
           .map(OpenLineage.JobFacet::getAdditionalProperties)
           .map(
               docFacet -> {
                 // Extracted description for job (optional)
-                return Optional.ofNullable(docFacet.get(Facets.Job.DESCRIPTION))
+                return Optional.ofNullable(docFacet.get(Job.DESCRIPTION))
                     .map(String::valueOf)
                     .orElseThrow(() -> new FacetNotValid.MissingDescriptionForJob(job.getName()));
               });
@@ -645,9 +645,9 @@ public final class Metadata {
     static Optional<Metadata.Dataset.Schema> schemaFor(@NonNull final OpenLineage.Dataset dataset) {
       return Optional.ofNullable(dataset.getFacets())
           .map(OpenLineage.DatasetFacets::getAdditionalProperties)
-          .map(datasetFacets -> datasetFacets.get(Facets.Dataset.SCHEMA))
+          .map(datasetFacets -> datasetFacets.get(Dataset.SCHEMA))
           .map(OpenLineage.DatasetFacet::getAdditionalProperties)
-          .map(datasetSchemaFacet -> datasetSchemaFacet.get(Facets.Dataset.SCHEMA_FIELDS))
+          .map(datasetSchemaFacet -> datasetSchemaFacet.get(Dataset.SCHEMA_FIELDS))
           .map(
               datasetSchema ->
                   ((List<Map<?, ?>>) datasetSchema)
@@ -656,7 +656,7 @@ public final class Metadata {
                               datasetField -> {
                                 // Extract name for dataset field (required).
                                 final String fieldName =
-                                    Optional.ofNullable(datasetField.get(Facets.Dataset.FIELD_NAME))
+                                    Optional.ofNullable(datasetField.get(Dataset.FIELD_NAME))
                                         .map(String::valueOf)
                                         .orElseThrow(
                                             () ->
@@ -665,13 +665,13 @@ public final class Metadata {
 
                                 // Extract type for dataset field (optional).
                                 final Optional<String> fieldType =
-                                    Optional.ofNullable(datasetField.get(Facets.Dataset.FIELD_TYPE))
+                                    Optional.ofNullable(datasetField.get(Dataset.FIELD_TYPE))
                                         .map(String::valueOf);
 
                                 // Extract description for dataset field (optional).
                                 final Optional<String> fieldDescription =
                                     Optional.ofNullable(
-                                            datasetField.get(Facets.Dataset.FIELD_DESCRIPTION))
+                                            datasetField.get(Dataset.FIELD_DESCRIPTION))
                                         .map(String::valueOf);
 
                                 // Metadata.Dataset.Schema.Field instance (if present) with dataset
@@ -705,14 +705,14 @@ public final class Metadata {
               datasetSourceFacet -> {
                 // Extract name for dataset source (required).
                 final SourceName sourceName =
-                    Optional.ofNullable((String) datasetSourceFacet.get(Facets.Dataset.SOURCE_NAME))
+                    Optional.ofNullable((String) datasetSourceFacet.get(Dataset.SOURCE_NAME))
                         .map(SourceName::of)
                         .orElseThrow(
                             () -> new FacetNotValid.MissingNameForDatasetSource(dataset.getName()));
                 // Extract connection URI for dataset source (required).
                 final URI connectionUrl =
                     Optional.ofNullable(
-                            (String) datasetSourceFacet.get(Facets.Dataset.SOURCE_CONNECTION_URI))
+                            (String) datasetSourceFacet.get(Dataset.SOURCE_CONNECTION_URI))
                         .map(URI::create)
                         .orElseThrow(
                             () ->

@@ -90,7 +90,7 @@ public class JobFacetsDaoTest {
 
   @Test
   public void testGetFacetsByRunUuid() {
-    LineageEvent.JobFacet jobFacet =
+    JobFacet jobFacet =
         JobFacet.builder()
             .documentation(
                 new LineageEvent.DocumentationJobFacet(

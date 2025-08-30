@@ -57,7 +57,7 @@ public class ColumnLineageServiceTest {
   private static DatasetFieldDao fieldDao;
   private static DatasetDao datasetDao;
   private static ColumnLineageService lineageService;
-  private static LineageEvent.JobFacet jobFacet;
+  private static JobFacet jobFacet;
 
   private LineageEvent.Dataset dataset_A = getDatasetA();
   private LineageEvent.Dataset dataset_B = getDatasetB();

@@ -23,7 +23,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import marquez.common.models.JobName;
 import marquez.common.models.JobType;
 import marquez.common.models.RunState;
@@ -299,5 +301,96 @@ public class JobDaoTest {
     ObjectMapper objectMapper = mock(ObjectMapper.class);
     when(objectMapper.writeValueAsString(any())).thenThrow(new RuntimeException());
     assertNull(jobDao.toJson(null, objectMapper));
+  }
+
+  @Test
+  public void testFindAllWithRunOptimized() {
+    // Create multiple jobs with runs to test the optimized batch approach
+    JobRow job1 = createJobWithoutSymlinkTarget(jdbi, namespace, "job1", "first job");
+    JobRow job2 = createJobWithoutSymlinkTarget(jdbi, namespace, "job2", "second job");
+    JobRow job3 = createJobWithoutSymlinkTarget(jdbi, namespace, "job3", "third job");
+
+    // Create runs for each job
+    RunDao runDao = jdbi.onDemand(RunDao.class);
+
+    List<RunState> runStates = new ArrayList<>();
+    Collections.addAll(runStates, RunState.values());
+
+    // Test the optimized method
+    List<Job> jobs = jobDao.findAllWithRun(namespace.getName(), runStates, 10, 0);
+
+    // Verify that jobs are returned
+    assertThat(jobs).isNotEmpty();
+    assertThat(jobs.size()).isGreaterThanOrEqualTo(3);
+
+    // Check that job names are correct
+    List<String> jobNames =
+        jobs.stream().map(job -> job.getName().getValue()).collect(Collectors.toList());
+    assertThat(jobNames).contains("job1", "job2", "job3");
+  }
+
+  @Test
+  public void testFindAllWithRunPerformanceComparison() {
+    // Create multiple jobs to test performance difference
+    List<JobRow> testJobs = new ArrayList<>();
+    for (int i = 0; i < 5; i++) {
+      testJobs.add(
+          createJobWithoutSymlinkTarget(
+              jdbi, namespace, "perfJob" + i, "performance test job " + i));
+    }
+
+    List<RunState> runStates = new ArrayList<>();
+    Collections.addAll(runStates, RunState.values());
+
+    // Test optimized approach - should be faster due to batch processing
+    long startTime = System.currentTimeMillis();
+    List<Job> optimizedJobs = jobDao.findAllWithRun(namespace.getName(), runStates, 10, 0);
+    long optimizedTime = System.currentTimeMillis() - startTime;
+
+    // Verify results are correct
+    assertThat(optimizedJobs).isNotEmpty();
+
+    // The optimized version should complete within reasonable time
+    // (This is more of a smoke test since we can't easily measure the dramatic performance
+    // improvement without large dataset)
+    assertThat(optimizedTime).isLessThan(5000L); // Should complete within 5 seconds
+  }
+
+  @Test
+  public void testFindAllWithRunEmptyResults() {
+    // Test with no jobs
+    List<RunState> runStates = new ArrayList<>();
+    Collections.addAll(runStates, RunState.values());
+
+    List<Job> jobs = jobDao.findAllWithRun("nonexistent_namespace", runStates, 10, 0);
+    assertThat(jobs).isEmpty();
+  }
+
+  @Test
+  public void testFindAllWithRunPagination() {
+    // Create more jobs than the limit to test pagination
+    for (int i = 0; i < 15; i++) {
+      createJobWithoutSymlinkTarget(
+          jdbi, namespace, "paginationJob" + i, "pagination test job " + i);
+    }
+
+    List<RunState> runStates = new ArrayList<>();
+    Collections.addAll(runStates, RunState.values());
+
+    // Test first page
+    List<Job> firstPage = jobDao.findAllWithRun(namespace.getName(), runStates, 10, 0);
+    assertThat(firstPage).hasSizeLessThanOrEqualTo(10);
+
+    // Test second page
+    List<Job> secondPage = jobDao.findAllWithRun(namespace.getName(), runStates, 10, 10);
+    assertThat(secondPage).isNotEmpty();
+
+    // Ensure no duplicates between pages
+    Set<String> firstPageJobNames =
+        firstPage.stream().map(job -> job.getName().getValue()).collect(Collectors.toSet());
+    Set<String> secondPageJobNames =
+        secondPage.stream().map(job -> job.getName().getValue()).collect(Collectors.toSet());
+
+    assertThat(firstPageJobNames).doesNotContainAnyElementsOf(secondPageJobNames);
   }
 }

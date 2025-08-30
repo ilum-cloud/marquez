@@ -189,7 +189,7 @@ public final class Utils {
 
   /**
    * Construct a UUID from a {@link ParentRunFacet} - if the {@link
-   * marquez.service.models.LineageEvent.RunLink#runId} field is a valid {@link UUID}, use it.
+   * LineageEvent.RunLink#runId} field is a valid {@link UUID}, use it.
    * Otherwise, compute a {@link UUID} from the job name and the reported runId. If the job name
    * contains a dot (.), only return the portion up to the last dot in the name (this attempts to
    * address airflow tasks, which always report the job name as &lt;dag_name&gt;.&lt;task_name&lt;
@@ -421,14 +421,14 @@ public final class Utils {
       private Set<Triple<String, String, String>> fields = ImmutableSet.of();
       private UUID runId;
 
-      DatasetVersionData.DatasetVersionDataBuilder schemaFields(
+      DatasetVersionDataBuilder schemaFields(
           List<LineageEvent.SchemaField> schemaFields) {
         if (schemaFields == null) return this;
         setFields(schemaFields, schemaFieldToTripleFunction);
         return this;
       }
 
-      DatasetVersionData.DatasetVersionDataBuilder streamMeta(StreamMeta streamMeta) {
+      DatasetVersionDataBuilder streamMeta(StreamMeta streamMeta) {
         this.sourceName = streamMeta.getSourceName().getValue();
         this.physicalName = streamMeta.getPhysicalName().getValue();
         this.schemaLocation = streamMeta.getSchemaLocation().toString();
@@ -436,14 +436,14 @@ public final class Utils {
         return this;
       }
 
-      DatasetVersionData.DatasetVersionDataBuilder datasetMeta(DatasetMeta datasetMeta) {
+      DatasetVersionDataBuilder datasetMeta(DatasetMeta datasetMeta) {
         if (datasetMeta == null) return this;
         return datasetMeta.getType().equals(DB_TABLE)
             ? dbTableMeta((DbTableMeta) datasetMeta)
             : streamMeta((StreamMeta) datasetMeta);
       }
 
-      DatasetVersionData.DatasetVersionDataBuilder dbTableMeta(DbTableMeta tableMeta) {
+      DatasetVersionDataBuilder dbTableMeta(DbTableMeta tableMeta) {
         this.sourceName = tableMeta.getSourceName().getValue();
         this.physicalName = tableMeta.getPhysicalName().getValue();
         fields(tableMeta.getFields());
@@ -451,7 +451,7 @@ public final class Utils {
         return this;
       }
 
-      DatasetVersionData.DatasetVersionDataBuilder fields(List<Field> fields) {
+      DatasetVersionDataBuilder fields(List<Field> fields) {
         if (fields == null) return this;
         setFields(fields, fieldToTripleFunction);
         return this;

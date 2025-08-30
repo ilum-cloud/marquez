@@ -11,7 +11,7 @@ public final class Exclusions {
   private static final ClassToInstanceMap<Object> EXCLUSIONS = MutableClassToInstanceMap.create();
 
   public static void use(@NonNull ExclusionsConfig config) {
-    EXCLUSIONS.put(ExclusionsConfig.NamespaceExclusions.class, config.getNamespaces());
+    EXCLUSIONS.put(NamespaceExclusions.class, config.getNamespaces());
   }
 
   public static NamespaceExclusions namespaces() {

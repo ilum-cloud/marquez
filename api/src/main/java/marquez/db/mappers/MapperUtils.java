@@ -43,7 +43,7 @@ public final class MapperUtils {
 
   /**
    * Returns a new {@link ImmutableMap} instance of facets present in the provided {@link
-   * java.sql.ResultSet}, or an empty {@link ImmutableMap} if none are present. Note, {@code key}s
+   * ResultSet}, or an empty {@link ImmutableMap} if none are present. Note, {@code key}s
    * in the resulting facet map are the facet names (ex: 'schema', 'dataSource', 'documentation',
    * etc).
    */

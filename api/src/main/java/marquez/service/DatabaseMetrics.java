@@ -9,7 +9,7 @@ import io.prometheus.client.CollectorRegistry;
 import io.prometheus.client.Histogram;
 
 public class DatabaseMetrics {
-  public static final CollectorRegistry registry = new io.prometheus.client.CollectorRegistry();
+  public static final CollectorRegistry registry = new CollectorRegistry();
 
   public static final Histogram dbDurationSeconds =
       Histogram.build()

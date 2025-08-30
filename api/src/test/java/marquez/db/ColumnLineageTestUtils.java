@@ -111,7 +111,7 @@ public class ColumnLineageTestUtils {
 
   public static UpdateLineageRow createLineage(
       OpenLineageDao openLineageDao, LineageEvent.Dataset input, LineageEvent.Dataset output) {
-    LineageEvent.JobFacet jobFacet = JobFacet.builder().build();
+    JobFacet jobFacet = JobFacet.builder().build();
     return LineageTestUtils.createLineageRow(
         openLineageDao,
         "job_" + UUID.randomUUID(),

@@ -209,7 +209,7 @@ public interface DatasetFacetsDao {
       UUID runUuid,
       Instant lineageEventTime,
       String lineageEventType,
-      DatasetFacetsDao.Type type,
+      Type type,
       String name,
       PGobject facet) {}
 }

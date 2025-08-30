@@ -4,7 +4,7 @@
   </a>
 </div>
 
-**Ilum fork.** This is an Ilum-maintained fork of Marquez created while upstream development slowed. We used it to ship critical fixes and additive features without breaking compatibility. From **0.52.x**, we’re aligning with upstream and contributing improvements back. Learn more in our short write-up: [Ilum × Marquez — Project Description & Rationale](./docs/ilum-marquez.md).
+**Ilum fork.** This is an Ilum-maintained fork of Marquez created while upstream development slowed. We used it to ship critical fixes and additive features without breaking compatibility. From **0.52.x**, we’re aligning with upstream and contributing improvements back. Learn more in our short write-up: [Ilum × Marquez — Project Description & Rationale](ILUMxMARQUEZ.md).
 
 <div align="center">
   <img src="./docs/assets/images/marquez-logo.png" width="500px" />

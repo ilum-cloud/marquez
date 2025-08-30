@@ -38,7 +38,7 @@ public class ColumnLineageIntegrationTest extends BaseIntegrationTest {
   public void setup(Jdbi jdbi) {
     OpenLineageDao openLineageDao = jdbi.onDemand(OpenLineageDao.class);
 
-    LineageEvent.JobFacet jobFacet = JobFacet.builder().build();
+    JobFacet jobFacet = JobFacet.builder().build();
 
     LineageEvent.Dataset dataset_A = getDatasetA();
     LineageEvent.Dataset dataset_B = getDatasetB();
