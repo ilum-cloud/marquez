@@ -11,6 +11,7 @@ import static marquez.common.models.DatasetType.DB_TABLE;
 
 import com.google.common.collect.ImmutableSet;
 import io.openlineage.server.OpenLineage;
+import jakarta.annotation.Nullable;
 import java.net.URI;
 import java.net.URL;
 import java.time.Instant;
@@ -19,7 +20,6 @@ import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import javax.annotation.Nullable;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
@@ -414,9 +414,7 @@ public final class Metadata {
                 // Extract runID for parent run (required)
                 final RunId parentRunId =
                     Optional.ofNullable(parentRunFacet.get(Run.PARENT_RUN))
-                        .map(
-                            parentRun ->
-                                ((Map<String, Object>) parentRun).get(Run.PARENT_RUN_ID))
+                        .map(parentRun -> ((Map<String, Object>) parentRun).get(Run.PARENT_RUN_ID))
                         .map(String::valueOf)
                         .map(RunId::new)
                         .orElseThrow(() -> new FacetNotValid.MissingRunIdForParent(run.getRunId()));
@@ -447,14 +445,12 @@ public final class Metadata {
                                                   run.getRunId()));
                               // ParentRun.Job instance with namespace and name of parent job
                               // (required).
-                              return ParentRun.Job.of(
-                                  JobId.of(parentJobNamespace, parentJobName));
+                              return ParentRun.Job.of(JobId.of(parentJobNamespace, parentJobName));
                             })
                         .orElseThrow(() -> new FacetNotValid.MissingJobForParent(run.getRunId()));
                 // Metadata.ParentRun instance (if present) with unique run ID and job of parent run
                 // (required).
-                return Optional.of(
-                    ParentRun.builder().id(parentRunId).job(parentJob).build());
+                return Optional.of(ParentRun.builder().id(parentRunId).job(parentJob).build());
               });
     }
 
@@ -570,8 +566,7 @@ public final class Metadata {
 
                 // Extract source code repo URL for job (optional).
                 final Optional<URL> sourceCodeRepoUrl =
-                    Optional.ofNullable(
-                            sourceCodeLocationFacet.get(Job.SOURCE_CODE_REPO_URL))
+                    Optional.ofNullable(sourceCodeLocationFacet.get(Job.SOURCE_CODE_REPO_URL))
                         .map(String::valueOf)
                         .map(Utils::toUrl);
 
@@ -670,8 +665,7 @@ public final class Metadata {
 
                                 // Extract description for dataset field (optional).
                                 final Optional<String> fieldDescription =
-                                    Optional.ofNullable(
-                                            datasetField.get(Dataset.FIELD_DESCRIPTION))
+                                    Optional.ofNullable(datasetField.get(Dataset.FIELD_DESCRIPTION))
                                         .map(String::valueOf);
 
                                 // Metadata.Dataset.Schema.Field instance (if present) with dataset

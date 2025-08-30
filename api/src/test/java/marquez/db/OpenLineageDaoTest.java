@@ -415,10 +415,7 @@ class OpenLineageDaoTest {
             "COMPLETE",
             jobFacet,
             Arrays.asList(
-                new Dataset(
-                    "symlinkNamespace",
-                    "symlinkName",
-                    DatasetFacets.builder().build())),
+                new Dataset("symlinkNamespace", "symlinkName", DatasetFacets.builder().build())),
             Arrays.asList());
 
     // make sure writeJob output dataset and readJob input dataset are the same (have the same uuid)

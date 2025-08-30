@@ -23,6 +23,8 @@ import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.hash.Hashing;
 import io.dropwizard.jackson.Jackson;
+import jakarta.annotation.Nullable;
+import jakarta.validation.constraints.NotNull;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
@@ -44,8 +46,6 @@ import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import javax.annotation.Nullable;
-import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NonNull;
@@ -188,11 +188,11 @@ public final class Utils {
   }
 
   /**
-   * Construct a UUID from a {@link ParentRunFacet} - if the {@link
-   * LineageEvent.RunLink#runId} field is a valid {@link UUID}, use it.
-   * Otherwise, compute a {@link UUID} from the job name and the reported runId. If the job name
-   * contains a dot (.), only return the portion up to the last dot in the name (this attempts to
-   * address airflow tasks, which always report the job name as &lt;dag_name&gt;.&lt;task_name&lt;
+   * Construct a UUID from a {@link ParentRunFacet} - if the {@link LineageEvent.RunLink#runId}
+   * field is a valid {@link UUID}, use it. Otherwise, compute a {@link UUID} from the job name and
+   * the reported runId. If the job name contains a dot (.), only return the portion up to the last
+   * dot in the name (this attempts to address airflow tasks, which always report the job name as
+   * &lt;dag_name&gt;.&lt;task_name&lt;
    *
    * @param parent
    * @return
@@ -421,8 +421,7 @@ public final class Utils {
       private Set<Triple<String, String, String>> fields = ImmutableSet.of();
       private UUID runId;
 
-      DatasetVersionDataBuilder schemaFields(
-          List<LineageEvent.SchemaField> schemaFields) {
+      DatasetVersionDataBuilder schemaFields(List<LineageEvent.SchemaField> schemaFields) {
         if (schemaFields == null) return this;
         setFields(schemaFields, schemaFieldToTripleFunction);
         return this;

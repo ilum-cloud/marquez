@@ -378,9 +378,7 @@ public class DatasetFacetsDaoTest {
         "job_" + UUID.randomUUID(),
         "COMPLETE",
         jobFacet,
-        Arrays.asList(
-            new Dataset(
-                "namespace", "dataset_input", inputDatasetFacetsbuilder.build())),
+        Arrays.asList(new Dataset("namespace", "dataset_input", inputDatasetFacetsbuilder.build())),
         Collections.emptyList(),
         null);
   }
@@ -396,8 +394,7 @@ public class DatasetFacetsDaoTest {
         jobFacet,
         Collections.emptyList(),
         Arrays.asList(
-            new Dataset(
-                "namespace", "dataset_output", outputDatasetFacetsbuilder.build())),
+            new Dataset("namespace", "dataset_output", outputDatasetFacetsbuilder.build())),
         null);
   }
 
