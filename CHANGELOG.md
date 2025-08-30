@@ -1,6 +1,26 @@
 # Changelog
 
-## [Unreleased](https://github.com/MarquezProject/marquez/compare/0.50.0...HEAD)
+## [Unreleased](https://github.com/ilum-cloud/marquez/compare/0.53.0...HEAD)
+
+## [0.53.0](https://github.com/ilum-cloud/marquez/compare/a89b89cad27f87c90dd964c40dae8dfb3f64031f...0.53.0) - 2025-08-30
+
+### Added
+
+* API: **New** `GET` `/api/v1/search/simple` simple search with optimized performance for faster discovery across entities.
+
+### Changed
+
+* API: Upgrade to **Dropwizard 4.0.13** [`#3056`](https://github.com/MarquezProject/marquez/pull/3056) — all praise to [@swar00pduthks](https://github.com/swar00pduthks) 🎉
+* API: Bump **OpenLineage**, **Jdbi3**, and **Testcontainers** to latest compatible versions.
+
+### Fixed
+
+* API: Resolved performance issues reported in [`#2987`](https://github.com/MarquezProject/marquez/issues/2987).
+
+### Docs
+
+* README: Kick off **ilum** community-aligned fork and refresh README to reflect the new direction.
+
 
 ## [0.50.0](https://github.com/MarquezProject/marquez/compare/0.49.0...0.50.0) - 2024-10-23
 

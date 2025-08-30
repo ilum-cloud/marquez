@@ -20,7 +20,7 @@ WORKDIR /usr/src/app
 RUN apk add --no-cache bash coreutils
 
 RUN npm init -y >/dev/null 2>&1 \
- && npm install express@^5 http-proxy-middleware@^2.0.6 \
+ && npm install express@^5 http-proxy-middleware@^2.0.6
 
 ARG REACT_APP_ADVANCED_SEARCH
 ENV REACT_APP_ADVANCED_SEARCH=$REACT_APP_ADVANCED_SEARCH

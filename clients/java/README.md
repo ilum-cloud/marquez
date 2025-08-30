@@ -10,14 +10,14 @@ Maven:
 <dependency>
     <groupId>io.github.marquezproject</groupId>
     <artifactId>marquez-java</artifactId>
-    <version>0.51.1</version>
+    <version>0.53.0</version>
 </dependency>
 ```
 
 or Gradle:
 
 ```groovy
-implementation 'io.github.marquezproject:marquez-java:0.51.1
+implementation 'io.github.marquezproject:marquez-java:0.53.0
 ```
 
 ## Usage
