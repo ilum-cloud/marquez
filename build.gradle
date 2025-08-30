@@ -40,10 +40,10 @@ allprojects {
         }
 
         configurations.all {
-        resolutionStrategy {
-            force 'com.google.guava:guava:33.4.6-jre'
+            resolutionStrategy {
+                force 'com.google.guava:guava:33.4.6-jre'
+            }
         }
-    }
     }
 }
 
@@ -76,7 +76,7 @@ subprojects {
         slf4jVersion = '1.7.36'
         postgresqlVersion = '42.7.5'
         jakartaVersion = '9.1.0'
-        graphqlJavaVersion = '20.2'
+        graphqlJavaVersion = '20.9'
         graphqlServletVersion = '15.0.0'
         jakartaValidationVersion = '3.0.2'
         prometheusVersion = '0.16.0'
@@ -95,6 +95,11 @@ subprojects {
         implementation "jakarta.validation:jakarta.validation-api:${jakartaValidationVersion}"
         implementation "org.projectlombok:lombok:${lombokVersion}"
         annotationProcessor "org.projectlombok:lombok:${lombokVersion}"
+
+        // Enforce patched Apache HttpClient5 version to remediate CVE-2025-27820
+        constraints {
+            implementation("org.apache.httpcomponents.client5:httpclient5:5.4.3")
+        }
 
         testImplementation "org.assertj:assertj-core:${assertjVersion}"
         testImplementation "org.junit.jupiter:junit-jupiter:${junit5Version}"
