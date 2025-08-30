@@ -1304,8 +1304,11 @@ public class OpenLineageIntegrationTest extends BaseIntegrationTest {
                 namespace,
                 taskName,
                 ol.newJobFacetsBuilder()
-                    .documentation(ol.newDocumentationJobFacet("the job docs"))
-                    .sql(ol.newSQLJobFacet("SELECT * FROM the_table"))
+                    .documentation(
+                        ol.newDocumentationJobFacetBuilder()
+                            .description("test documentation")
+                            .build())
+                    .sql(ol.newSQLJobFacetBuilder().query("SELECT * FROM the_table").build())
                     .build()))
         .inputs(Collections.emptyList())
         .outputs(Collections.emptyList())
