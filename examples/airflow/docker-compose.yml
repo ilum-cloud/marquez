@@ -83,7 +83,7 @@ services:
     # command: ["postgres", "-c", "log_statement=all"]
 
   marquez_web:
-    image: marquezproject/marquez-web:latest
+    image: ilum/marquez-web:latest
     environment:
       - MARQUEZ_HOST=marquez
       - MARQUEZ_PORT=5000

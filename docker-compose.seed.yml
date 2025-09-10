@@ -1,7 +1,7 @@
 version: "3.7"
 services:
   seed_marquez:
-    image: "marquezproject/marquez:${TAG}"
+    image: "ilum/marquez:${TAG}"
     # platform: linux/amd64
     container_name: seed-marquez-with-metadata
     environment:

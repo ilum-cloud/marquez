@@ -1,7 +1,7 @@
 version: "3.7"
 services:
   api:
-    image: "marquezproject/marquez:${TAG}"
+    image: "ilum/marquez:${TAG}"
     # platform: linux/amd64
     container_name: marquez-api
     environment:
