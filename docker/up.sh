@@ -61,6 +61,7 @@ usage() {
 
 # Change working directory to project root
 project_root=$(git rev-parse --show-toplevel)
+PROJECT_NAME="$(basename "$project_root" | tr '[:upper:]' '[:lower:]')"
 cd "${project_root}/"
 
 # Base docker compose file
@@ -172,4 +173,4 @@ fi
 
 # Run docker compose cmd with overrides
 DOCKER_SCAN_SUGGEST="false" API_PORT=${API_PORT} API_ADMIN_PORT=${API_ADMIN_PORT} WEB_PORT=${WEB_PORT} POSTGRES_PORT=${DB_PORT} SEARCH_ENABLED=${SEARCH_ENABLED} SEARCH_PORT=${SEARCH_PORT} TAG=${TAG} \
-  docker --log-level ERROR compose $compose_files up $compose_args
+  docker --log-level ERROR compose -p "${PROJECT_NAME}" $compose_files up $compose_args
