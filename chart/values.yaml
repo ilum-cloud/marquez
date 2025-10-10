@@ -15,12 +15,12 @@ marquez:
   ##
   replicaCount: 1
   ## Marquez image version
-  ## ref: https://hub.docker.com/r/marquezproject/marquez/tags/
+  ## ref: https://hub.docker.com/r/ilum/marquez/tags/
   ##
   image:
     registry: docker.io
-    repository: marquezproject/marquez
-    tag: 0.51.1
+    repository: ilum/marquez
+    tag: 0.53.0
     pullPolicy: IfNotPresent
   ## Name of the existing secret containing credentials for the Marquez installation.
   ## When this is specified, it will take precedence over the values configured in the 'db' section.
@@ -84,12 +84,12 @@ web:
   ##
   replicaCount: 1
   ## Marquez web image version
-  ## ref: https://hub.docker.com/r/marquezproject/marquez-web/tags/
+  ## ref: https://hub.docker.com/r/ilum/marquez-web/tags/
   ##
   image:
     registry: docker.io
-    repository: marquezproject/marquez-web
-    tag: 0.51.1
+    repository: ilum/marquez-web
+    tag: 0.53.0
     pullPolicy: IfNotPresent
   ## Marquez website will run on this port
   ##

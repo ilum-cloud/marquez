@@ -309,7 +309,7 @@ public class DatasetFacetsDaoTest {
 
   @Test
   public void testInsertOutputDatasetFacetsFor() {
-    LineageEvent.JobFacet jobFacet = JobFacet.builder().build();
+    JobFacet jobFacet = JobFacet.builder().build();
 
     UpdateLineageRow lineageRow =
         LineageTestUtils.createLineageRow(
@@ -340,7 +340,7 @@ public class DatasetFacetsDaoTest {
 
   @Test
   public void testInsertInputDatasetFacetsFor() {
-    LineageEvent.JobFacet jobFacet = JobFacet.builder().build();
+    JobFacet jobFacet = JobFacet.builder().build();
 
     UpdateLineageRow lineageRow =
         LineageTestUtils.createLineageRow(
@@ -371,23 +371,21 @@ public class DatasetFacetsDaoTest {
 
   private UpdateLineageRow createLineageRowWithInputDataset(
       LineageEvent.DatasetFacets.DatasetFacetsBuilder inputDatasetFacetsbuilder) {
-    LineageEvent.JobFacet jobFacet = JobFacet.builder().build();
+    JobFacet jobFacet = JobFacet.builder().build();
 
     return LineageTestUtils.createLineageRow(
         openLineageDao,
         "job_" + UUID.randomUUID(),
         "COMPLETE",
         jobFacet,
-        Arrays.asList(
-            new LineageEvent.Dataset(
-                "namespace", "dataset_input", inputDatasetFacetsbuilder.build())),
+        Arrays.asList(new Dataset("namespace", "dataset_input", inputDatasetFacetsbuilder.build())),
         Collections.emptyList(),
         null);
   }
 
   private UpdateLineageRow createLineageRowWithOutputDataset(
       LineageEvent.DatasetFacets.DatasetFacetsBuilder outputDatasetFacetsbuilder) {
-    LineageEvent.JobFacet jobFacet = JobFacet.builder().build();
+    JobFacet jobFacet = JobFacet.builder().build();
 
     return LineageTestUtils.createLineageRow(
         openLineageDao,
@@ -396,8 +394,7 @@ public class DatasetFacetsDaoTest {
         jobFacet,
         Collections.emptyList(),
         Arrays.asList(
-            new LineageEvent.Dataset(
-                "namespace", "dataset_output", outputDatasetFacetsbuilder.build())),
+            new Dataset("namespace", "dataset_output", outputDatasetFacetsbuilder.build())),
         null);
   }
 

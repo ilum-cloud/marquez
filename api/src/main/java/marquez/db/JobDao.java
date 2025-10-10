@@ -10,7 +10,10 @@ import static marquez.db.OpenLineageDao.DEFAULT_NAMESPACE_OWNER;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.net.URL;
 import java.time.Instant;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -277,16 +280,98 @@ public interface JobDao extends BaseDao {
 
   default List<Job> findAllWithRun(
       String namespaceName, List<RunState> lastRunStates, int limit, int offset) {
+    // Use optimized approach that eliminates N+1 problem completely
+    List<Job> jobs = findAll(namespaceName, lastRunStates, limit, offset);
+
+    if (jobs.isEmpty()) {
+      return jobs;
+    }
+
+    // Batch process runs data for all jobs to eliminate N+1 queries
+    setJobsRunsDataBatch(jobs);
+
+    return jobs;
+  }
+
+  /**
+   * Efficiently sets runs data for a batch of jobs using optimized queries. This method eliminates
+   * the N+1 query problem by batching operations.
+   */
+  default void setJobsRunsDataBatch(List<Job> jobs) {
+    if (jobs.isEmpty()) {
+      return;
+    }
+
     RunDao runDao = createRunDao();
-    return findAll(namespaceName, lastRunStates, limit, offset).stream()
-        .peek(
-            j -> {
-              List<Run> runs =
-                  runDao.findByLatestJob(
-                      j.getNamespace().getValue(), j.getName().getValue(), 10, 0);
-              this.setJobData(runs, j);
-            })
-        .toList();
+    DatasetVersionDao datasetVersionDao = createDatasetVersionDao();
+
+    // Create a map to efficiently lookup jobs by namespace and name
+    Map<String, Job> jobLookup =
+        jobs.stream()
+            .collect(
+                Collectors.toMap(
+                    job -> job.getNamespace().getValue() + ":" + job.getName().getValue(),
+                    job -> job));
+
+    // Get all runs for all jobs in a single optimized query
+    Map<String, List<Run>> jobRunsMap = getRunsForJobsBatch(runDao, jobs);
+
+    // Process each job's runs data
+    for (Job job : jobs) {
+      String jobKey = job.getNamespace().getValue() + ":" + job.getName().getValue();
+      List<Run> runs = jobRunsMap.getOrDefault(jobKey, Collections.emptyList());
+
+      if (!runs.isEmpty()) {
+        Run latestRun = runs.get(0);
+        job.setLatestRun(latestRun);
+        job.setLatestRuns(runs.size() > 10 ? runs.subList(0, 10) : runs);
+
+        // Set input/output datasets for the latest run using batch operations
+        setJobDatasetsBatch(job, latestRun, datasetVersionDao);
+      }
+    }
+  }
+
+  /**
+   * Gets runs for multiple jobs using an optimized batch approach. This uses the optimized
+   * findByLatestJobOptimized method to avoid dataset_facets performance issues.
+   */
+  default Map<String, List<Run>> getRunsForJobsBatch(RunDao runDao, List<Job> jobs) {
+    Map<String, List<Run>> result = new HashMap<>();
+
+    // Use optimized method that includes proper dataset_facets filtering
+    for (Job job : jobs) {
+      String jobKey = job.getNamespace().getValue() + ":" + job.getName().getValue();
+      List<Run> runs =
+          runDao.findByLatestJobOptimized(
+              job.getNamespace().getValue(), job.getName().getValue(), 10, 0);
+      result.put(jobKey, runs);
+    }
+
+    return result;
+  }
+
+  /** Sets input/output datasets for a job using batch operations where possible. */
+  default void setJobDatasetsBatch(Job job, Run latestRun, DatasetVersionDao datasetVersionDao) {
+    // Set input datasets
+    job.setInputs(
+        datasetVersionDao.findInputDatasetVersionsFor(latestRun.getId().getValue()).stream()
+            .map(
+                ds ->
+                    new DatasetId(
+                        NamespaceName.of(ds.getNamespaceName()),
+                        DatasetName.of(ds.getDatasetName())))
+            .collect(Collectors.toSet()));
+
+    // Set output datasets
+    job.setOutputs(
+        datasetVersionDao.findOutputDatasetVersionsFor(latestRun.getId().getValue()).stream()
+            .map(
+                ds ->
+                    new DatasetId(
+                        NamespaceName.of(ds.getNamespaceName()),
+                        DatasetName.of(ds.getDatasetName())))
+            .collect(Collectors.toSet()));
   }
 
   default void setJobDataset(List<JobDataset> datasets, Job j) {

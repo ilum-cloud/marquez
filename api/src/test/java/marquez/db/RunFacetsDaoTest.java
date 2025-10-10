@@ -61,11 +61,11 @@ public class RunFacetsDaoTest {
             JobFacet.builder().build(),
             Collections.emptyList(),
             Collections.emptyList(),
-            new LineageEvent.ParentRunFacet(
+            new ParentRunFacet(
                 PRODUCER_URL,
                 SCHEMA_URL,
-                new LineageEvent.RunLink(UUID.randomUUID().toString()),
-                new LineageEvent.JobLink("namespace", "name")),
+                new RunLink(UUID.randomUUID().toString()),
+                new JobLink("namespace", "name")),
             ImmutableMap.of()
                 .of(
                     "custom-run-facet", "some-run-facet",
@@ -128,11 +128,11 @@ public class RunFacetsDaoTest {
         row.lineageEventType(),
         new LineageEvent.RunFacet(
             nominalTimeRunFacet,
-            new LineageEvent.ParentRunFacet(
+            new ParentRunFacet(
                 PRODUCER_URL,
                 SCHEMA_URL,
-                new LineageEvent.RunLink(UUID.randomUUID().toString()),
-                new LineageEvent.JobLink("namespace", "name")),
+                new RunLink(UUID.randomUUID().toString()),
+                new JobLink("namespace", "name")),
             ImmutableMap.of().of("spark.logicalPlan", "{some-spark-logical-plan:true}")));
 
     int logicalPlanFacets =
@@ -163,7 +163,7 @@ public class RunFacetsDaoTest {
 
   @Test
   public void testGetFacetsByRunUuid() {
-    LineageEvent.JobFacet jobFacet =
+    JobFacet jobFacet =
         JobFacet.builder()
             .documentation(
                 new LineageEvent.DocumentationJobFacet(
@@ -182,11 +182,11 @@ public class RunFacetsDaoTest {
             jobFacet,
             Collections.emptyList(),
             Collections.emptyList(),
-            new LineageEvent.ParentRunFacet(
+            new ParentRunFacet(
                 PRODUCER_URL,
                 SCHEMA_URL,
-                new LineageEvent.RunLink(UUID.randomUUID().toString()),
-                new LineageEvent.JobLink("namespace", "name")),
+                new RunLink(UUID.randomUUID().toString()),
+                new JobLink("namespace", "name")),
             ImmutableMap.of().of("custom-run-facet", "some-run-facet"));
 
     assertThat(runFacetsDao.findRunFacetsByRunUuid(lineageRow.getRun().getUuid()).getFacets())

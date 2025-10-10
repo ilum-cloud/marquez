@@ -508,6 +508,90 @@ public interface RunDao extends BaseDao {
   void updateJobVersion(UUID runUuid, UUID jobVersionUuid);
 
   @SqlQuery(
+      """
+          WITH filtered_jobs AS (
+            SELECT
+                jv.uuid,
+                jv.namespace_name,
+                jv.name
+            FROM jobs_view jv
+            WHERE jv.namespace_name=:namespace AND (jv.name=:jobName OR :jobName = ANY(jv.aliases))
+          ),
+          run_facets_agg AS (
+            SELECT
+                run_uuid,
+                JSON_AGG(facet ORDER BY lineage_event_time ASC) AS facets
+            FROM run_facets_view
+            -- This filter here is used for performance purpose: we only aggregate the json of run_uuid that matters
+            WHERE
+                run_uuid IN (SELECT uuid FROM runs_view WHERE job_uuid IN (SELECT uuid FROM filtered_jobs))
+            GROUP BY run_uuid
+          ),
+          input_versions_agg AS (
+               SELECT
+                   im.run_uuid,
+                   JSON_AGG(json_build_object('namespace', dv.namespace_name,
+                        'name', dv.dataset_name,
+                        'version', dv.version,
+                        'dataset_version_uuid', dv.uuid
+                   )) AS input_versions
+               FROM runs_input_mapping im
+               INNER JOIN dataset_versions dv ON im.dataset_version_uuid = dv.uuid
+               -- This filter here is used for performance purpose: we only aggregate the json of run_uuid that matters
+               WHERE
+                   im.run_uuid IN (SELECT uuid FROM runs_view WHERE job_uuid IN (SELECT uuid FROM filtered_jobs))
+               GROUP BY im.run_uuid
+          ),
+          output_versions_agg AS (
+              SELECT
+                  dv.run_uuid,
+              JSON_AGG(json_build_object('namespace', namespace_name,
+                                       'name', dataset_name,
+                                       'version', version,
+                                       'dataset_version_uuid', uuid
+                                       )) AS output_versions
+              FROM dataset_versions dv
+              -- This filter here is used for performance purpose: we only aggregate the json of run_uuid that matters
+              WHERE dv.run_uuid IN (SELECT uuid FROM runs_view WHERE job_uuid IN (SELECT uuid FROM filtered_jobs))
+              GROUP BY dv.run_uuid
+          ),
+          dataset_facets_agg AS (
+              SELECT
+                  run_uuid,
+                  JSON_AGG(json_build_object(
+                      'dataset_version_uuid', dataset_version_uuid,
+                      'name', name,
+                      'type', type,
+                      'facet', facet
+                  ) ORDER BY created_at ASC) as dataset_facets
+              FROM dataset_facets_view
+              -- This filter here is used for performance purpose: we only aggregate the json of run_uuid that matters
+              WHERE run_uuid IN (SELECT uuid FROM runs_view WHERE job_uuid IN (SELECT uuid FROM filtered_jobs))
+              AND (type ILIKE 'output' OR type ILIKE 'input')
+              GROUP BY run_uuid
+          )
+          SELECT
+              r.*,
+              ra.args,
+              f.facets,
+              jv.version AS job_version,
+              ri.input_versions,
+              ro.output_versions,
+              df.dataset_facets
+          FROM runs_view r
+          INNER JOIN filtered_jobs fj ON r.job_uuid = fj.uuid
+          LEFT JOIN run_facets_agg f ON r.uuid = f.run_uuid
+          LEFT JOIN run_args ra ON ra.uuid = r.run_args_uuid
+          LEFT JOIN job_versions jv ON jv.uuid = r.job_version_uuid
+          LEFT JOIN input_versions_agg ri ON r.uuid = ri.run_uuid
+          LEFT JOIN output_versions_agg ro ON r.uuid = ro.run_uuid
+          LEFT JOIN dataset_facets_agg df ON r.uuid = df.run_uuid
+          ORDER BY r.transitioned_at DESC, r.started_at DESC
+          LIMIT :limit OFFSET :offset
+      """)
+  List<Run> findByLatestJobOptimized(String namespace, String jobName, int limit, int offset);
+
+  @SqlQuery(
       BASE_FIND_RUN_SQL
           + """
       WHERE r.uuid IN (

@@ -8,7 +8,7 @@
 set -eu
 
 readonly SEMVER_REGEX="^[0-9]+(\.[0-9]+){2}(-rc\.[0-9]+)?$" # X.Y.Z
-readonly ORG="marquezproject"
+readonly ORG="ilum"
 
 # Change working directory to project root
 project_root=$(git rev-parse --show-toplevel)

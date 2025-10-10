@@ -27,13 +27,13 @@ class GetChanges:
     def get_pulls(self):
         print("Working on it...")
         g = Github(self.github_token)
-        repo = g.get_repo("MarquezProject/marquez")
-        prev_date = repo.get_release(self.previous).created_at
+        repo = g.get_repo("ilum-cloud/marquez")
+        prev_date = repo.get_commit(self.previous).commit.author.date
         commits = repo.get_commits(since=prev_date)
         self.pulls = [pull for commit in commits for pull in commit.get_pulls()]
 
     def write_title(self):
-        self.rel_title_str = f"## [{self.current}](https://github.com/MarquezProject/marquez/compare/{self.previous}...{self.current}) - {date.today()}"  # noqa: E501
+        self.rel_title_str = f"## [{self.current}](https://github.com/ilum-cloud/marquez/compare/{self.previous}...{self.current}) - {date.today()}"  # noqa: E501
 
     def describe_changes(self):
         for pull in self.pulls:

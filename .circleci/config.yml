@@ -52,8 +52,8 @@ jobs:
       image: ubuntu-2004:2023.10.1
     steps:
       - checkout
-      - run: docker build --no-cache --tag "marquezproject/marquez:${CIRCLE_SHA1}" .
-      - run: docker save -o marquez.tar "marquezproject/marquez:${CIRCLE_SHA1}"
+      - run: docker build --no-cache --tag "ilum/marquez:${CIRCLE_SHA1}" .
+      - run: docker save -o marquez.tar "ilum/marquez:${CIRCLE_SHA1}"
       - store_artifacts:
           path: marquez.tar
 
@@ -63,8 +63,8 @@ jobs:
       image: ubuntu-2004:2023.10.1
     steps:
       - *checkout_project_root
-      - run: docker build --no-cache --tag "marquezproject/marquez-web:${CIRCLE_SHA1}" .
-      - run: docker save -o marquez-web.tar "marquezproject/marquez-web:${CIRCLE_SHA1}"
+      - run: docker build --no-cache --tag "ilum/marquez-web:${CIRCLE_SHA1}" .
+      - run: docker save -o marquez-web.tar "ilum/marquez-web:${CIRCLE_SHA1}"
       - store_artifacts:
           path: marquez-web.tar
 

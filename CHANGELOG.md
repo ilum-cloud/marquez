@@ -1,6 +1,72 @@
 # Changelog
 
-## [Unreleased](https://github.com/MarquezProject/marquez/compare/0.50.0...HEAD)
+## [Unreleased](https://github.com/ilum-cloud/marquez/compare/0.53.0...HEAD)
+
+## [0.53.0](https://github.com/ilum-cloud/marquez/compare/0.50.0...0.53.0) - 2025-08-30
+
+### Added
+
+* API: **New** `GET` `/api/v1/search/simple` simple search with optimized performance for faster discovery across entities. [@thijs-s](https://github.com/thijs-s) [@ilum-cloud](https://github.com/ilum-cloud)
+* docs: Arcade demo on homepage [`#3009`](https://github.com/MarquezProject/marquez/pull/3009) [@merobi-hub](https://github.com/merobi-hub)
+  *interactive demo widget on homepage*
+* docs: Add db retention policy to helm chart [`#3037`](https://github.com/MarquezProject/marquez/pull/3037) [@zhou322](https://github.com/zhou322)
+  *Add dbRetention policy to the helm chart.*
+* web: Add Chinese language [`#2992`](https://github.com/MarquezProject/marquez/pull/2992) [@buvb](https://github.com/buvb)
+* docs: Airflow tutorial [`#2985`](https://github.com/MarquezProject/marquez/pull/2985) [@merobi-hub](https://github.com/merobi-hub)
+  *adds an Airflow tutorial to the docs*
+* docs: Added CsvPath to the list of Marquez adopters. 1-line change. [`#2986`](https://github.com/MarquezProject/marquez/pull/2986) [@dk107dk](https://github.com/dk107dk)
+  *Adds CsvPath (https://www.csvpath.org) to the list of adopters.*
+* web: Job Facets [`#2979`](https://github.com/MarquezProject/marquez/pull/2979) [@phixMe](https://github.com/phixMe)
+  *Adding Job facets*
+* client/python: Add `pytz` [`#2978`](https://github.com/MarquezProject/marquez/pull/2978) [@wslulciuc](https://github.com/wslulciuc)
+* docker: Add arg `--db-port` to `docker/up.sh` [`#2961`](https://github.com/MarquezProject/marquez/pull/2961) [@wslulciuc](https://github.com/wslulciuc)
+
+### Changed
+
+* API: Upgrade to **Dropwizard 4.0.13** [`#3056`](https://github.com/MarquezProject/marquez/pull/3056) — all praise to [@swar00pduthks](https://github.com/swar00pduthks) 🎉
+* API: Bump **OpenLineage**, **Jdbi3**, and **Testcontainers** to latest compatible versions. [@thijs-s](https://github.com/thijs-s) [@ilum-cloud](https://github.com/ilum-cloud)
+* API: Update dependency org.opensearch.client:opensearch-java to v2.22.0 [`#3004`](https://github.com/MarquezProject/marquez/pull/3004) [@renovate[bot]](https://github.com/apps/renovate)
+* API: Update dependency org.opensearch.client:opensearch-rest-client to v2.19.1 [`#3005`](https://github.com/MarquezProject/marquez/pull/3005) [@renovate[bot]](https://github.com/apps/renovate)
+* docs: Update API doc version [`#3029`](https://github.com/MarquezProject/marquez/pull/3029) [@Chaho12](https://github.com/Chaho12)
+  *Update version in api doc to 0.50.0*
+* docs: Change website url. [`#3019`](https://github.com/MarquezProject/marquez/pull/3019) [@merobi-hub](https://github.com/merobi-hub)
+* docs: Update docusaurus.config.js [`#3018`](https://github.com/MarquezProject/marquez/pull/3018) [@merobi-hub](https://github.com/merobi-hub)
+* docs: Promote v2 content in docs for deploying with GH Pages [`#3013`](https://github.com/MarquezProject/marquez/pull/3013) [@merobi-hub](https://github.com/merobi-hub)
+  *promote v2 content in docs for GH Pages deploys*
+* docker: Use `-p` for `--db-port` [`#2977`](https://github.com/MarquezProject/marquez/pull/2977) [@wslulciuc](https://github.com/wslulciuc)
+* docs: Docs: replace bitly links [`#2973`](https://github.com/MarquezProject/marquez/pull/2973) [@merobi-hub](https://github.com/merobi-hub)
+  *replace bitly links with permanent invites*
+* docker: Usage for `--db-port` [`#2965`](https://github.com/MarquezProject/marquez/pull/2965) [@wslulciuc](https://github.com/wslulciuc)
+* web: Update Events Page [`#2955`](https://github.com/MarquezProject/marquez/pull/2955) [@phixMe](https://github.com/phixMe)
+* API: `Dataset.currentVersionUuid` `->` `DatasetVersion.uuid` [`#2954`](https://github.com/MarquezProject/marquez/pull/2954) [@wslulciuc](https://github.com/wslulciuc)
+* API: fix(deps): update dependency org.opensearch.client:opensearch-java to v2.16.0 [`#2910`](https://github.com/MarquezProject/marquez/pull/2910) [@renovate[bot]](https://github.com/apps/renovate)
+* client/java: fix(deps): update dependency org.apache.commons:commons-lang3 to v3.17.0 [`#2908`](https://github.com/MarquezProject/marquez/pull/2908) [@renovate[bot]](https://github.com/apps/renovate)
+* API: fix(deps): update dependency org.opensearch.client:opensearch-rest-client to v2.17.1 [`#2911`](https://github.com/MarquezProject/marquez/pull/2911) [@renovate[bot]](https://github.com/apps/renovate)
+* web: Update `web/docs/demo.gif` [`#2948`](https://github.com/MarquezProject/marquez/pull/2948) [@wslulciuc](https://github.com/wslulciuc)
+* docker: Templatize event time in `metadata.json` [`#2946`](https://github.com/MarquezProject/marquez/pull/2946) [@wslulciuc](https://github.com/wslulciuc)
+
+### Fixed
+
+* API: Resolved performance issues reported in [`#2987`](https://github.com/MarquezProject/marquez/issues/2987). [@thijs-s](https://github.com/thijs-s) [@ilum-cloud](https://github.com/ilum-cloud)
+* docs: Fix baseUrl in docusaurus config [`#3027`](https://github.com/MarquezProject/marquez/pull/3027) [@merobi-hub](https://github.com/merobi-hub)
+* docs: Rm alias from cname. [`#3022`](https://github.com/MarquezProject/marquez/pull/3022) [@merobi-hub](https://github.com/merobi-hub)
+* docs: Fix cname [`#3020`](https://github.com/MarquezProject/marquez/pull/3020) [@merobi-hub](https://github.com/merobi-hub)
+* web: Add missing proxy for jobs route [`#2996`](https://github.com/MarquezProject/marquez/pull/2996) [@phixMe](https://github.com/phixMe)
+  *Adding the `/jobs` route in the proxy to allow navigation.*
+* docs: Fix tutorial preview card [`#2989`](https://github.com/MarquezProject/marquez/pull/2989) [@merobi-hub](https://github.com/merobi-hub)
+  *fix tutorial preview card in docs*
+* API: Null pointer error on job event for static lineage [`#2974`](https://github.com/MarquezProject/marquez/pull/2974) [@davidsharp7](https://github.com/davidsharp7)
+  *Make runuuid/Lineage event type nullable*
+* web: encodeURIComponent namespace and name in GET (column)lineage requests [`#2984`](https://github.com/MarquezProject/marquez/pull/2984) [@MaartenHubrechts](https://github.com/MaartenHubrechts)
+* API: Fix null pointer on Dataset facets [`#2967`](https://github.com/MarquezProject/marquez/pull/2967) [@davidsharp7](https://github.com/davidsharp7)
+  *Fix null pointer exception for Dataset Source Facets*
+* chart: Set WEB_PORT in Helm chart [`#2963`](https://github.com/MarquezProject/marquez/pull/2963) [@ThijsKoot](https://github.com/ThijsKoot)
+* web: feature: Better handling of missing environment variables in setupProxy.js file [`#2956`](https://github.com/MarquezProject/marquez/pull/2956) [@arturowczarek](https://github.com/arturowczarek)
+* API: Fix attachment of run to lineage job [`#2953`](https://github.com/MarquezProject/marquez/pull/2953) [@phixMe](https://github.com/phixMe)
+
+### Docs
+
+* README: Kick off **ilum** community-aligned fork and refresh README to reflect the new direction. [@thijs-s](https://github.com/thijs-s) [@ilum-cloud](https://github.com/ilum-cloud)
 
 ### Added
 

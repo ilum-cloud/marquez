@@ -16,6 +16,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+import jakarta.annotation.Nullable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
@@ -25,7 +26,6 @@ import java.util.List;
 import java.util.Properties;
 import java.util.Set;
 import java.util.function.Consumer;
-import javax.annotation.Nullable;
 import javax.net.ssl.SSLContext;
 import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
@@ -86,7 +86,7 @@ public class MarquezClient {
   }
 
   public MarquezClient(final URL baseUrl, @Nullable final String apiKey) {
-    this(MarquezUrl.create(baseUrl), MarquezHttp.create(MarquezClient.Version.get(), apiKey));
+    this(MarquezUrl.create(baseUrl), MarquezHttp.create(Version.get(), apiKey));
   }
 
   @VisibleForTesting
@@ -99,13 +99,13 @@ public class MarquezClient {
     return listLineageEvents(SortDirection.DESC, DEFAULT_LIMIT);
   }
 
-  public List<LineageEvent> listLineageEvents(MarquezClient.SortDirection sort, int limit) {
+  public List<LineageEvent> listLineageEvents(SortDirection sort, int limit) {
     final String bodyAsJson = http.get(url.toEventUrl(sort, limit));
     return Events.fromJson(bodyAsJson).getValue();
   }
 
   public List<LineageEvent> listLineageEvents(
-      MarquezClient.SortDirection sort, ZonedDateTime before, ZonedDateTime after, int limit) {
+      SortDirection sort, ZonedDateTime before, ZonedDateTime after, int limit) {
     final String bodyAsJson = http.get(url.toEventUrl(sort, before, after, limit));
     return Events.fromJson(bodyAsJson).getValue();
   }
@@ -541,7 +541,7 @@ public class MarquezClient {
     public MarquezClient build() {
       return new MarquezClient(
           MarquezUrl.create(baseUrl),
-          MarquezHttp.create(sslContext, httpCustomizer, MarquezClient.Version.get(), apiKey));
+          MarquezHttp.create(sslContext, httpCustomizer, Version.get(), apiKey));
     }
   }
 

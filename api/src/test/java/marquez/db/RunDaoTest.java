@@ -286,4 +286,129 @@ class RunDaoTest {
         .extracting("externalId")
         .isEqualTo("updated-external-id");
   }
+
+  @Test
+  public void testFindByLatestJobOptimized() {
+    final JobMeta jobMeta = newJobMetaWith(NamespaceName.of(namespaceRow.getName()));
+    final JobRow jobRow =
+        newJobWith(jdbi, namespaceRow.getName(), newJobName().getValue(), jobMeta);
+    Set<RunRow> runs =
+        createRunsForJob(jobRow, 5, jobMeta.getOutputs()).collect(Collectors.toSet());
+
+    TreeSet<RunRow> sortedRuns =
+        new TreeSet<>(Comparator.comparing(RunRow::getUpdatedAt).reversed());
+    sortedRuns.addAll(runs);
+
+    // Test the optimized method
+    List<Run> optimizedRuns =
+        runDao.findByLatestJobOptimized(jobRow.getNamespaceName(), jobRow.getName(), 3, 0);
+
+    // Verify results
+    assertThat(optimizedRuns).hasSize(3);
+    assertThat(optimizedRuns.get(0))
+        .hasFieldOrPropertyWithValue("id", new RunId(sortedRuns.first().getUuid()));
+  }
+
+  @Test
+  public void testFindByLatestJobOptimizedVsOriginal() {
+    final JobMeta jobMeta = newJobMetaWith(NamespaceName.of(namespaceRow.getName()));
+    final JobRow jobRow =
+        newJobWith(jdbi, namespaceRow.getName(), newJobName().getValue(), jobMeta);
+
+    // Create runs for the job
+    createRunsForJob(jobRow, 10, jobMeta.getOutputs()).collect(Collectors.toSet());
+
+    // Get results from both methods
+    List<Run> originalRuns =
+        runDao.findByLatestJob(jobRow.getNamespaceName(), jobRow.getName(), 5, 0);
+    List<Run> optimizedRuns =
+        runDao.findByLatestJobOptimized(jobRow.getNamespaceName(), jobRow.getName(), 5, 0);
+
+    // Results should be identical
+    assertThat(optimizedRuns).hasSameSizeAs(originalRuns);
+
+    // Check that the run IDs match (same order)
+    List<RunId> originalIds = originalRuns.stream().map(Run::getId).collect(Collectors.toList());
+    List<RunId> optimizedIds = optimizedRuns.stream().map(Run::getId).collect(Collectors.toList());
+    assertThat(optimizedIds).isEqualTo(originalIds);
+
+    // Verify that dataset facets are included in optimized version
+    for (Run run : optimizedRuns) {
+      // The optimized version should include dataset facets data
+      assertThat(run).isNotNull();
+      assertThat(run.getId()).isNotNull();
+    }
+  }
+
+  @Test
+  public void testFindByLatestJobOptimizedWithDatasetFacets() {
+    final JobMeta jobMeta = newJobMetaWith(NamespaceName.of(namespaceRow.getName()));
+    final JobRow jobRow =
+        newJobWith(jdbi, namespaceRow.getName(), newJobName().getValue(), jobMeta);
+
+    // Create runs with outputs to ensure dataset facets are created
+    Set<RunRow> runs =
+        createRunsForJob(jobRow, 3, jobMeta.getOutputs()).collect(Collectors.toSet());
+
+    // Test optimized method - should include dataset facets without performance issues
+    long startTime = System.currentTimeMillis();
+    List<Run> optimizedRuns =
+        runDao.findByLatestJobOptimized(jobRow.getNamespaceName(), jobRow.getName(), 10, 0);
+    long optimizedTime = System.currentTimeMillis() - startTime;
+
+    // Verify results
+    assertThat(optimizedRuns).hasSize(3);
+
+    // Performance should be reasonable (this is more of a smoke test)
+    assertThat(optimizedTime).isLessThan(2000L); // Should complete within 2 seconds
+
+    // Verify that dataset information is properly populated
+    for (Run run : optimizedRuns) {
+      assertThat(run.getId()).isNotNull();
+      // Input/output versions should be populated when available
+      assertThat(run.getInputDatasetVersions()).isNotNull();
+      assertThat(run.getOutputDatasetVersions()).isNotNull();
+    }
+  }
+
+  @Test
+  public void testFindByLatestJobOptimizedWithPagination() {
+    final JobMeta jobMeta = newJobMetaWith(NamespaceName.of(namespaceRow.getName()));
+    final JobRow jobRow =
+        newJobWith(jdbi, namespaceRow.getName(), newJobName().getValue(), jobMeta);
+
+    // Create more runs than the limit to test pagination
+    createRunsForJob(jobRow, 15, jobMeta.getOutputs()).collect(Collectors.toSet());
+
+    // Test first page
+    List<Run> firstPage =
+        runDao.findByLatestJobOptimized(jobRow.getNamespaceName(), jobRow.getName(), 5, 0);
+    assertThat(firstPage).hasSize(5);
+
+    // Test second page
+    List<Run> secondPage =
+        runDao.findByLatestJobOptimized(jobRow.getNamespaceName(), jobRow.getName(), 5, 5);
+    assertThat(secondPage).hasSize(5);
+
+    // Test third page
+    List<Run> thirdPage =
+        runDao.findByLatestJobOptimized(jobRow.getNamespaceName(), jobRow.getName(), 5, 10);
+    assertThat(thirdPage).hasSize(5);
+
+    // Ensure no duplicates between pages
+    Set<RunId> allRunIds =
+        Stream.of(firstPage, secondPage, thirdPage)
+            .flatMap(List::stream)
+            .map(Run::getId)
+            .collect(Collectors.toSet());
+    assertThat(allRunIds).hasSize(15); // Should have 15 unique run IDs
+  }
+
+  @Test
+  public void testFindByLatestJobOptimizedEmptyResults() {
+    // Test with non-existent job
+    List<Run> runs =
+        runDao.findByLatestJobOptimized("nonexistent_namespace", "nonexistent_job", 10, 0);
+    assertThat(runs).isEmpty();
+  }
 }

@@ -3,7 +3,7 @@
 openapi: 3.0.2
 info:
   title: Marquez
-  version: 0.51.2-SNAPSHOT
+  version: 0.53.1
   description: Marquez is an open source **metadata service** for the **collection**, **aggregation**,
     and **visualization** of a data ecosystem's metadata.
   license:
@@ -691,9 +691,9 @@ paths:
           description: Match jobs or datasets within the given namespace.
           required: false
           schema:
-           type: string
-           maxLength: 1024
-           example: my-namespace
+            type: string
+            maxLength: 1024
+            example: my-namespace
         - before:
           name: before
           in: query
@@ -724,6 +724,86 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/SearchResultList'
+
+  /search/full:
+    get:
+      operationId: fullSearch
+      parameters:
+        - $ref: '#/components/parameters/q'
+        - $ref: '#/components/parameters/filter'
+        - $ref: '#/components/parameters/simpleSearchSort'
+        - $ref: '#/components/parameters/simpleSearchLimit'
+        - $ref: '#/components/parameters/offset'
+        - name: namespace
+          in: query
+          description: Match jobs or datasets within the given namespace.
+          required: false
+          schema:
+            type: string
+            maxLength: 1024
+            example: my-namespace
+        - name: facets
+          in: query
+          description: Whether to include facets in the response (default: true).
+          required: false
+          schema:
+            type: boolean
+            default: true
+        - name: facetNames
+          in: query
+          description: List of specific facet names to include (default: all facets).
+          required: false
+          schema:
+            type: array
+            items:
+              type: string
+            example: ["schema", "dataSource"]
+      summary: Full search for datasets and jobs
+      description: Returns datasets and jobs matching the query with configurable metadata.
+        This endpoint returns Dataset and Job objects with fields and optional facets based
+        on the facets parameter. Facets can be disabled for performance or filtered to specific
+        types. Results are sorted by updated_at DESC (newest first) by default.
+        Supports pagination with limit and offset parameters.
+      tags:
+        - Search
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FullSearchResults'
+
+  /search/simple:
+    get:
+      operationId: simpleSearch
+      parameters:
+        - $ref: '#/components/parameters/q'
+        - $ref: '#/components/parameters/filter'
+        - $ref: '#/components/parameters/simpleSearchSort'
+        - $ref: '#/components/parameters/simpleSearchLimit'
+        - name: namespace
+          in: query
+          description: Match jobs or datasets within the given namespace.
+          required: false
+          schema:
+            type: string
+            maxLength: 1024
+            example: my-namespace
+      summary: Simple search for datasets and jobs
+      description: Returns datasets and jobs matching the query using fast, dependency-free search.
+        Results are sorted by updated_at DESC (newest first) by default. This endpoint provides
+        a lightweight alternative to the advanced search functionality without requiring
+        OpenSearch/Elasticsearch infrastructure.
+      tags:
+        - Search
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimpleSearchResults'
 
 components:
   parameters:
@@ -823,6 +903,29 @@ components:
         type: integer
         example: 25
         default: 100
+
+    simpleSearchLimit:
+      name: limit
+      in: query
+      description: The number of results to return. Maximum allowed is 100.
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        example: 20
+        default: 20
+
+    simpleSearchSort:
+      name: sort
+      in: query
+      description: Sorts the results by name or updated_at. Defaults to updated_at DESC (newest first).
+      required: false
+      schema:
+        type: string
+        enum: [name, updated_at]
+        example: updated_at
+        default: updated_at
 
     offset:
       name: offset
@@ -2069,6 +2172,246 @@ components:
       enum: [DATASET, JOB]
       description: The type of search result.
       example: DATASET
+
+    SimpleDataset:
+      type: object
+      description: Dataset object optimized for search results with configurable facets and fields.
+      properties:
+        id:
+          $ref: '#/components/schemas/DatasetId'
+        type:
+          description: The type of the dataset.
+          type: string
+        name:
+          description: The **logical** name of the dataset.
+          type: string
+        physicalName:
+          description: The **physical** name of the dataset.
+          type: string
+        createdAt:
+          description: An [ISO-8601](https://en.wikipedia.org/wiki/ISO_8601) timestamp representing the date/time the dataset was created.
+          type: string
+          format: date-time
+        updatedAt:
+          description: An [ISO-8601](https://en.wikipedia.org/wiki/ISO_8601) timestamp representing the date/time the dataset was updated.
+          type: string
+          format: date-time
+        namespace:
+          type: string
+          description: The namespace of the dataset.
+        sourceName:
+          description: The name of the source associated with the dataset.
+          type: string
+        tags:
+          description: List of tags.
+          type: array
+          items:
+            type: string
+        lastModifiedAt:
+          description: An [ISO-8601](https://en.wikipedia.org/wiki/ISO_8601) timestamp representing the date/time the dataset was last modified by a successful run.
+          type: string
+          format: date-time
+        lastLifecycleState:
+          description: The last lifecycle state of the dataset.
+          type: string
+        description:
+          description: The description of the dataset.
+          type: string
+        currentVersion:
+          description: The current version of the dataset.
+          type: string
+          format: uuid
+        deleted:
+          description: The deleted state of the dataset.
+          type: boolean
+        fields:
+          description: The fields of the dataset. Included when available.
+          type: array
+          items:
+            $ref: '#/components/schemas/Field'
+        facets:
+          description: The facets of the dataset. Included based on facets parameter. For a full list of standard dataset facets, see [OpenLineage](https://github.com/OpenLineage/OpenLineage/blob/main/spec/OpenLineage.md#standard-facets).
+          type: object
+          additionalProperties: true
+      example:
+        id:
+          namespace: my-namespace
+          name: my-dataset
+        type: DB_TABLE
+        name: my-dataset
+        physicalName: public.mytable
+        createdAt: 2019-05-09T19:49:24.201361Z
+        updatedAt: 2019-05-09T19:49:24.201361Z
+        namespace: my-namespace
+        sourceName: my-source
+        tags: []
+        description: My analytics dataset
+        currentVersion: "b1d626a2-6d3a-475e-9ecf-943176d4a8c6"
+        fields:
+          - name: "id"
+            type: "INTEGER"
+            description: "User ID"
+          - name: "name"
+            type: "VARCHAR"
+            description: "User name"
+        facets:
+          schema:
+            fields:
+              - name: "id"
+                type: "int"
+
+    SimpleJob:
+      type: object
+      description: Job object optimized for search results with configurable facets.
+      properties:
+        id:
+          $ref: '#/components/schemas/JobId'
+        type:
+          description: The type of the job.
+          type: string
+        name:
+          description: The name of the job.
+          type: string
+        simpleName:
+          description: The shortened name of the job.
+          type: string
+        parentJobName:
+          description: The name of the parent job.
+          type: string
+        parentJobUuid:
+          description: The UUID of the parent job.
+          type: string
+        createdAt:
+          description: An [ISO-8601](https://en.wikipedia.org/wiki/ISO_8601) timestamp representing the date/time the job was created.
+          type: string
+          format: date-time
+        updatedAt:
+          description: An [ISO-8601](https://en.wikipedia.org/wiki/ISO_8601) timestamp representing the date/time the job was updated.
+          type: string
+          format: date-time
+        namespace:
+          description: The namespace of the job.
+          type: string
+        location:
+          description: The URL of the job source code or artifact.
+          type: string
+          format: URL
+        description:
+          description: The description of the job.
+          type: string
+        currentVersion:
+          description: The current version of the job.
+          type: string
+          format: uuid
+        tags:
+          description: List of tags.
+          type: array
+          items:
+            type: string
+        labels:
+          description: List of labels.
+          type: array
+          items:
+            type: string
+        facets:
+          description: The facets of the job. Included based on facets parameter. For a full list of standard job facets, see [OpenLineage](https://github.com/OpenLineage/OpenLineage/blob/main/spec/OpenLineage.md#standard-facets).
+          type: object
+          additionalProperties: true
+      example:
+        id:
+          namespace: my-namespace
+          name: my-job
+        type: BATCH
+        name: my-job
+        createdAt: 2019-05-09T19:49:24.201361Z
+        updatedAt: 2019-05-09T19:49:24.201361Z
+        namespace: my-namespace
+        location: https://github.com/my-jobs/blob/124f6089ad4c5fcbb1d7b33cbb5d3a9521c5d32c
+        description: My first job!
+        currentVersion: "b1d626a2-6d3a-475e-9ecf-943176d4a8c6"
+        tags: []
+        facets:
+          sql:
+            query: "SELECT * FROM users WHERE active = true"
+
+    FullSearchResults:
+      type: object
+      properties:
+        totalCount:
+          description: Total number of full search results (datasets + jobs).
+          type: integer
+          example: 3
+        datasets:
+          type: array
+          items:
+            $ref: '#/components/schemas/SimpleDataset'
+          description: Simplified Dataset objects matching the search query.
+        jobs:
+          type: array
+          items:
+            $ref: '#/components/schemas/SimpleJob'
+          description: Simplified Job objects matching the search query.
+      example:
+        totalCount: 3
+        datasets:
+          - id:
+              namespace: my-namespace
+              name: analytics_data
+            type: DB_TABLE
+            name: analytics_data
+            physicalName: public.analytics_data
+            createdAt: "2019-05-09T19:49:24.201361Z"
+            updatedAt: "2023-12-01T10:30:00Z"
+            namespace: my-namespace
+            sourceName: my-source
+            tags: []
+            description: Analytics dataset
+            currentVersion: b1d626a2-6d3a-475e-9ecf-943176d4a8c6
+        jobs:
+          - id:
+              namespace: my-namespace
+              name: etl-job
+            type: BATCH
+            name: etl-job
+            createdAt: "2019-05-09T19:49:24.201361Z"
+            updatedAt: "2023-12-01T10:30:00Z"
+            namespace: my-namespace
+            description: ETL processing job
+            currentVersion: a2b626a2-6d3a-475e-9ecf-943176d4a8c7
+
+    SimpleSearchResults:
+      type: object
+      properties:
+        totalCount:
+          description: Total number of simple search results.
+          type: integer
+          example: 2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/SimpleSearchResult'
+
+    SimpleSearchResult:
+      type: object
+      properties:
+        type:
+          $ref: '#/components/schemas/SearchResultType'
+        name:
+          type: string
+          description: The name of the dataset or job.
+          example: analytics_data
+        namespace:
+          type: object
+          properties:
+            value:
+              type: string
+              description: The namespace name.
+              example: production
+        updatedAt:
+          type: string
+          format: date-time
+          description: An [ISO-8601](https://en.wikipedia.org/wiki/ISO_8601) timestamp representing the date/time the dataset or job was updated.
+          example: 2023-12-01T10:30:00Z
 
     FacetsResult:
       type: object

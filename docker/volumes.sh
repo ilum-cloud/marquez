@@ -28,7 +28,7 @@ project_root=$(git rev-parse --show-toplevel)
 cd "${project_root}/"
 
 # Volume prefix for Marquez
-volume_prefix="${1}"
+volume_prefix="$(echo "$1" | tr '[:upper:]' '[:lower:]')"
 
 # Ensure valid volume prefix
 if [[ -z "${volume_prefix}" ]]; then

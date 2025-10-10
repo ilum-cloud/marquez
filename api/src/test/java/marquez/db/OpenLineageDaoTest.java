@@ -143,21 +143,21 @@ class OpenLineageDaoTest {
             dao,
             job,
             Arrays.asList(
-                new LineageEvent.Dataset(
+                new Dataset(
                     "namespace",
                     "dataset_input",
-                    LineageEvent.DatasetFacets.builder()
+                    DatasetFacets.builder()
                         .schema(
-                            new LineageEvent.SchemaDatasetFacet(
+                            new SchemaDatasetFacet(
                                 PRODUCER_URL, SCHEMA_URL, Collections.emptyList()))
                         .build())),
             Arrays.asList(
-                new LineageEvent.Dataset(
+                new Dataset(
                     "namespace",
                     "dataset_output",
-                    LineageEvent.DatasetFacets.builder()
+                    DatasetFacets.builder()
                         .schema(
-                            new LineageEvent.SchemaDatasetFacet(
+                            new SchemaDatasetFacet(
                                 PRODUCER_URL, SCHEMA_URL, Collections.emptyList()))
                         .lifecycleStateChange(
                             new LineageEvent.LifecycleStateChangeFacet(
@@ -190,7 +190,7 @@ class OpenLineageDaoTest {
         new Dataset(
             NAMESPACE,
             DATASET_NAME,
-            LineageEvent.DatasetFacets.builder()
+            DatasetFacets.builder()
                 .lifecycleStateChange(
                     new LineageEvent.LifecycleStateChangeFacet(
                         PRODUCER_URL, SCHEMA_URL, "TRUNCATE"))
@@ -280,7 +280,7 @@ class OpenLineageDaoTest {
         new Dataset(
             NAMESPACE,
             DATASET_NAME,
-            LineageEvent.DatasetFacets.builder() // schema is missing
+            DatasetFacets.builder() // schema is missing
                 .columnLineage(
                     new LineageEvent.ColumnLineageDatasetFacet(
                         PRODUCER_URL,
@@ -331,7 +331,7 @@ class OpenLineageDaoTest {
         new Dataset(
             NAMESPACE,
             DATASET_NAME,
-            LineageEvent.DatasetFacets.builder()
+            DatasetFacets.builder()
                 .schema(
                     new SchemaDatasetFacet(
                         PRODUCER_URL,
@@ -393,7 +393,7 @@ class OpenLineageDaoTest {
         new Dataset(
             NAMESPACE,
             DATASET_NAME,
-            LineageEvent.DatasetFacets.builder()
+            DatasetFacets.builder()
                 .symlinks(
                     new LineageEvent.DatasetSymlinkFacet(
                         PRODUCER_URL,
@@ -415,10 +415,7 @@ class OpenLineageDaoTest {
             "COMPLETE",
             jobFacet,
             Arrays.asList(
-                new Dataset(
-                    "symlinkNamespace",
-                    "symlinkName",
-                    LineageEvent.DatasetFacets.builder().build())),
+                new Dataset("symlinkNamespace", "symlinkName", DatasetFacets.builder().build())),
             Arrays.asList());
 
     // make sure writeJob output dataset and readJob input dataset are the same (have the same uuid)
@@ -614,7 +611,7 @@ class OpenLineageDaoTest {
 
     assertThat(lineageEvents.get(0).getEventType()).isEqualTo("COMPLETE");
 
-    LineageEvent.Job job = lineageEvents.get(0).getJob();
+    Job job = lineageEvents.get(0).getJob();
     assertThat(job).extracting("namespace", "name").contains(NAMESPACE, WRITE_JOB_NAME);
   }
 
@@ -685,7 +682,7 @@ class OpenLineageDaoTest {
     return new Dataset(
         INPUT_NAMESPACE,
         INPUT_DATASET,
-        LineageEvent.DatasetFacets.builder()
+        DatasetFacets.builder()
             .schema(
                 new SchemaDatasetFacet(
                     PRODUCER_URL,
@@ -698,7 +695,7 @@ class OpenLineageDaoTest {
     return new Dataset(
         NAMESPACE,
         DATASET_NAME,
-        LineageEvent.DatasetFacets.builder()
+        DatasetFacets.builder()
             .schema(
                 new SchemaDatasetFacet(
                     PRODUCER_URL,

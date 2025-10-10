@@ -8,17 +8,18 @@ package marquez;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
-import graphql.kickstart.servlet.GraphQLHttpServlet;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.Getter;
 import lombok.NonNull;
 import marquez.api.ColumnLineageResource;
 import marquez.api.DatasetResource;
+import marquez.api.FullSearchResource;
 import marquez.api.JobResource;
 import marquez.api.NamespaceResource;
 import marquez.api.OpenLineageResource;
 import marquez.api.SearchResource;
+import marquez.api.SimpleSearchResource;
 import marquez.api.SourceResource;
 import marquez.api.StatsResource;
 import marquez.api.TagResource;
@@ -29,6 +30,7 @@ import marquez.db.ColumnLineageDao;
 import marquez.db.DatasetDao;
 import marquez.db.DatasetFieldDao;
 import marquez.db.DatasetVersionDao;
+import marquez.db.FullSearchDao;
 import marquez.db.JobDao;
 import marquez.db.JobFacetsDao;
 import marquez.db.JobVersionDao;
@@ -40,6 +42,7 @@ import marquez.db.RunDao;
 import marquez.db.RunFacetsDao;
 import marquez.db.RunStateDao;
 import marquez.db.SearchDao;
+import marquez.db.SimpleSearchDao;
 import marquez.db.SourceDao;
 import marquez.db.StatsDao;
 import marquez.db.TagDao;
@@ -83,6 +86,8 @@ public final class MarquezContext {
   @Getter private final LineageDao lineageDao;
   @Getter private final ColumnLineageDao columnLineageDao;
   @Getter private final SearchDao searchDao;
+  @Getter private final SimpleSearchDao simpleSearchDao;
+  @Getter private final FullSearchDao fullSearchDao;
   @Getter private final StatsDao statsDao;
   @Getter private final List<RunTransitionListener> runTransitionListeners;
 
@@ -106,11 +111,13 @@ public final class MarquezContext {
   @Getter private final OpenLineageResource openLineageResource;
   @Getter private final marquez.api.v2beta.SearchResource v2BetasearchResource;
   @Getter private final SearchResource searchResource;
+  @Getter private final SimpleSearchResource simpleSearchResource;
+  @Getter private final FullSearchResource fullSearchResource;
   @Getter private final StatsResource opsResource;
   @Getter private final ImmutableList<Object> resources;
   @Getter private final JdbiExceptionExceptionMapper jdbiException;
   @Getter private final JsonProcessingExceptionMapper jsonException;
-  @Getter private final GraphQLHttpServlet graphqlServlet;
+  @Getter private final jakarta.servlet.Servlet graphqlServlet;
   @Getter private final SearchConfig searchConfig;
 
   private MarquezContext(
@@ -123,7 +130,7 @@ public final class MarquezContext {
     }
     this.searchConfig = searchConfig;
 
-    final BaseDao baseDao = jdbi.onDemand(NamespaceDao.class);
+    final BaseDao baseDao = jdbi.onDemand(BaseDao.class);
     this.namespaceDao = jdbi.onDemand(NamespaceDao.class);
     this.sourceDao = jdbi.onDemand(SourceDao.class);
     this.datasetDao = jdbi.onDemand(DatasetDao.class);
@@ -141,6 +148,8 @@ public final class MarquezContext {
     this.lineageDao = jdbi.onDemand(LineageDao.class);
     this.columnLineageDao = jdbi.onDemand(ColumnLineageDao.class);
     this.searchDao = jdbi.onDemand(SearchDao.class);
+    this.simpleSearchDao = jdbi.onDemand(SimpleSearchDao.class);
+    this.fullSearchDao = jdbi.onDemand(FullSearchDao.class);
     this.statsDao = jdbi.onDemand(StatsDao.class);
     this.runTransitionListeners = runTransitionListeners;
 
@@ -183,6 +192,8 @@ public final class MarquezContext {
     this.tagResource = new TagResource(serviceFactory);
     this.openLineageResource = new OpenLineageResource(serviceFactory, openLineageDao);
     this.searchResource = new SearchResource(searchDao);
+    this.simpleSearchResource = new SimpleSearchResource(simpleSearchDao);
+    this.fullSearchResource = new marquez.api.FullSearchResource(fullSearchDao);
     this.opsResource = new StatsResource(serviceFactory);
     this.v2BetasearchResource = new marquez.api.v2beta.SearchResource(serviceFactory);
 
@@ -198,6 +209,8 @@ public final class MarquezContext {
             jsonException,
             openLineageResource,
             searchResource,
+            simpleSearchResource,
+            fullSearchResource,
             v2BetasearchResource,
             opsResource);
 

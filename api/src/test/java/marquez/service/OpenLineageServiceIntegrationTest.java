@@ -422,7 +422,7 @@ public class OpenLineageServiceIntegrationTest {
   void testJobIsNotHiddenAfterSubsequentOLEvent() throws ExecutionException, InterruptedException {
     String name = "aNotHiddenJob";
 
-    LineageEvent.LineageEventBuilder builder =
+    LineageEventBuilder builder =
         LineageEvent.builder()
             .eventType("COMPLETE")
             .job(LineageEvent.Job.builder().name(name).namespace(NAMESPACE).build())

@@ -20,7 +20,7 @@ import org.testcontainers.shaded.com.google.common.collect.ImmutableMap;
 public class FacetTestUtils {
 
   public static UpdateLineageRow createLineageWithFacets(OpenLineageDao openLineageDao) {
-    LineageEvent.JobFacet jobFacet =
+    JobFacet jobFacet =
         JobFacet.builder()
             .documentation(
                 new LineageEvent.DocumentationJobFacet(
