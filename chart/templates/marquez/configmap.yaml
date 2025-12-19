@@ -1,16 +1,9 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ include "common.names.fullname" . }}-config
-  labels: {{- include "common.labels.standard" . | nindent 4 }}
-    {{- if .Values.commonLabels }}
-    {{- include "common.tplvalues.render" (dict "value" .Values.commonLabels "context" $) | nindent 4 }}
-    {{- end }}
-    app.kubernetes.io/component: marquez
-  annotations:
-    {{- if .Values.commonAnnotations }}
-    {{- include "common.tplvalues.render" (dict "value" .Values.commonAnnotations "context" $) | nindent 4 }}
-    {{- end }}
+  name: {{ include "ilum-marquez.fullname" . }}-config
+  labels:
+    {{- include "ilum-marquez.labels" . | nindent 4 }}
 data:
   ### HTTP SERVER CONFIG ###
 
@@ -33,8 +26,9 @@ data:
       url: jdbc:postgresql://${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}
       user: ${POSTGRES_USER}
       password: ${POSTGRES_PASSWORD}
+
     # Enables retention policy configuration for database (default: disabled)
-    {{- if .Values.marquez.dbRetention }}
+    {{- if .Values.marquez.dbRetention.enabled }}
     dbRetention:
       frequencyMins: {{ .Values.marquez.dbRetention.frequencyMins }}
       numberOfRowsPerBatch: {{ .Values.marquez.dbRetention.numberOfRowsPerBatch }}

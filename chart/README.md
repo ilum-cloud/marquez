@@ -1,129 +1,109 @@
-# Marquez [Helm Chart](https://helm.sh)
+# ilum-marquez packaged by ilum
 
-Helm Chart for [Marquez](https://github.com/MarquezProject/marquez).
-
-## TL;DR;
-Run all commands within the "chart" folder, with default configurations.
+## TL;DR
 
 ```bash
-helm install marquez . --dependency-update
+$ helm repo add ilum https://charts.ilum.cloud
+$ helm install ilum-marquez ilum/ilum-marquez
 ```
-
-## Prerequisites
-
-- Kubernetes 1.12+
-- Helm 3.1.0
 
 ## Installing the Chart
 
-To install the chart with the release name `marquez` using a fresh Postgres instance.
+To install the chart with the release name `ilum-marquez`:
 
 ```bash
-helm install marquez . --dependency-update --set postgresql.enabled=true
+$ helm install ilum-marquez ilum/ilum-marquez --set postgresql.enabled=true
 ```
 
-> **Note:** For a list of parameters that can be overridden during installation, see the [configuration](#configuration) section.
-
-## Testing the Chart
-
-To confirm connectivity and availability of the installed components (API and optional website). Note
-that you may need to wait a minute or so for services to fully deploy.
-
-```bash
-helm test marquez
-```
+The command deploys `ilum-marquez` on the Kubernetes cluster in the default configuration. The [Parameters](#parameters)
+section lists the parameters that can be configured during installation.
 
 ## Uninstalling the Chart
 
-To uninstall the `marquez ` deployment:
+To uninstall/delete the `ilum-marquez` deployment:
 
 ```bash
-helm delete marquez
+$ helm delete ilum-marquez
 ```
 
-## Configuration
+The command removes all the Kubernetes components associated with the chart and deletes the release.
 
-### [Marquez](https://github.com/MarquezProject/marquez) **parameters**
+## Parameters
 
-| Parameter                    | Description                                                                   | Default                  |
-|------------------------------|-------------------------------------------------------------------------------|--------------------------|
-| `marquez.serviceAccount`     | K8s service account for Marquez Deploy                                        | `default`                |
-| `marquez.replicaCount`       | Number of desired replicas                                                    | `1`                      |
-| `marquez.image.registry`     | Marquez image registry                                                        | `docker.io`              |
-| `marquez.image.repository`   | Marquez image repository                                                      | `marquezproject/marquez` |
-| `marquez.image.tag`          | Marquez image tag                                                             | `0.15.0`                 |
-| `marquez.image.pullPolicy`   | Image pull policy                                                             | `IfNotPresent`           |
-| `marquez.existingSecretName` | Name of an existing secret containing db password ('marquez-db-password' key) | `nil`                    |
-| `marquez.db.host`            | PostgreSQL host                                                               | `localhost`              |
-| `marquez.db.port`            | PostgreSQL port                                                               | `5432`                   |
-| `marquez.db.name`            | PostgreSQL database                                                           | `marquez`                |
-| `marquez.db.user`            | PostgreSQL user                                                               | `buendia`                |
-| `marquez.db.password`        | PostgreSQL password                                                           | `macondo`                |
-| `marquez.dbRetention.enabled`| Enables retention policy                                                      | `false`                  |
-| `marquez.dbRetention.frequencyMins`| Apply retention policy at a frequency of every 'X' minutes              | `15`                     |
-| `marquez.dbRetention.numberOfRowsPerBatch`| Maximum number of rows deleted per batch                         | `1000`                   |
-| `marquez.dbRetention.retentionDays`| Maximum retention days                                                  | `7`                      |
-| `marquez.migrateOnStartup`   | Execute Flyway migration                                                      | `true`                   |
-| `marquez.hostname`           | Marquez hostname                                                              | `localhost`              |
-| `marquez.port`               | API host port                                                                 | `5000`                   |
-| `marquez.adminPort`          | Heath/Liveness host port                                                      | `5001`                   |
-| `marquez.resources.limits`   | K8s resource limit overrides                                                  | `nil`                    |
-| `marquez.resources.requests` | K8s resource requests overrides                                               | `nil`                    |
-| `marquez.podAnnotations`     | Additional pod annotations for Marquez                                        | `{}`                     |
-| `marquez.extraContainers`    | Additional container definitions to include inside Marquez Pod                | `[]`                     |
+### Marquez parameters
 
-### [Marquez Web UI](https://github.com/MarquezProject/marquez-web) **parameters**
+| Parameter                     | Description                                          | Default                                |
+|-------------------------------|------------------------------------------------------|----------------------------------------|
+| `marquez.replicaCount`        | Number of desired replicas                           | `1`                                    |
+| `marquez.image.registry`      | Image registry                                       | `docker.io`                            |
+| `marquez.image.repository`    | Image repository                                     | `ilum/marquez`                         |
+| `marquez.image.tag`           | Image tag                                            | `0.53.1`                               |
+| `marquez.image.pullPolicy`    | Image pull policy                                    | `IfNotPresent`                         |
+| `marquez.existingSecretName`  | Name of existing secret for DB credentials           | `""`                                   |
+| `marquez.extraContainers`     | Sidecar containers to add to the Marquez pod         | `[]`                                   |
+| `marquez.pdb.create`          | Create PodDisruptionBudget                           | `false`                                |
+| `marquez.podSecurityContext`  | Pod security context                                 | `{}`                                   |
+| `marquez.securityContext`     | Container security context                           | `{}`                                   |
+| `marquez.db.host`             | PostgreSQL host (ignored if postgresql.enabled=true) | `ilum-postgresql-0.ilum-postgresql-hl` |
+| `marquez.db.port`             | PostgreSQL port                                      | `5432`                                 |
+| `marquez.db.name`             | PostgreSQL database                                  | `marquez`                              |
+| `marquez.db.user`             | PostgreSQL user                                      | `ilum`                                 |
+| `marquez.db.password`         | PostgreSQL password                                  | `CHANGEMEPLEASE`                       |
+| `marquez.dbRetention.enabled` | Enable DB retention policy                           | `false`                                |
+| `marquez.migrateOnStartup`    | Execute Flyway migration                             | `true`                                 |
+| `marquez.resources`           | Resource limits/requests                             | `{}`                                   |
 
-| Parameter                | Description                     | Default        |
-|--------------------------|---------------------------------|----------------|
-| `web.enabled`            | Enables creation of Web UI      | `true`         |
-| `web.replicaCount`       | Number of desired replicas      | `1`            |
-| `web.image.registry`     | Marquez Web UI image registry   | `docker.io`    |
-| `web.image.repository`   | Marquez Web UI image repository | `marquez-web`  |
-| `web.image.tag`          | Marquez Web UI image tag        | `0.15.0`       |
-| `web.image.pullPolicy`   | Image pull policy               | `IfNotPresent` |
-| `web.port`               | Marquez Web host port           | `5000`         |
-| `web.resources.limits`   | K8s resource limit overrides    | `nil`          |
-| `web.resources.requests` | K8s resource requests overrides | `nil`          |
+### Marquez service parameters
 
-### [Postgres](https://github.com/bitnami/charts/blob/master/bitnami/postgresql/values.yaml) (sub-chart) **parameters**
+| Parameter                        | Description                    | Default     |
+|----------------------------------|--------------------------------|-------------|
+| `marquez.service.type`           | Marquez service type           | `ClusterIP` |
+| `marquez.service.port`           | Marquez service port           | `9555`      |
+| `marquez.service.nodePort`       | Marquez service nodePort       | `""`        |
+| `marquez.service.loadBalancerIP` | Marquez service loadBalancerIP | `""`        |
+| `marquez.service.annotations`    | Marquez service annotations    | `{}`        |
 
-| Parameter                        | Description                     | Default   |
-|----------------------------------|---------------------------------|-----------|
-| `postgresql.enabled`             | Deploy PostgreSQL container(s)  | `false`   |
-| `postgresql.image.tag`           | PostgreSQL image version        | `12.1.0`  |
-| `postgresql.auth.username`       | PostgreSQL username             | `buendia` |
-| `postgresql.auth.password`       | PostgreSQL password             | `macondo` |
-| `postgresql.auth.database`       | PostgreSQL database             | `marquez` |
-| `postgresql.auth.existingSecret` | Name of existing secret object  | `nil`     |
+### Marquez Web UI parameters
 
-### Common **parameters**
+| Parameter                | Description                | Default            |
+|--------------------------|----------------------------|--------------------|
+| `web.enabled`            | Enables creation of Web UI | `true`             |
+| `web.image.registry`     | Image registry             | `docker.io`        |
+| `web.image.repository`   | Image repository           | `ilum/marquez-web` |
+| `web.image.tag`          | Image tag                  | `0.53.1`           |
+| `web.podSecurityContext` | Pod security context       | `{}`               |
+| `web.securityContext`    | Container security context | `{}`               |
+| `web.pdb.create`         | Create PodDisruptionBudget | `false`            |
+| `web.resources`          | Resource limits/requests   | `{}`               |
 
-| Parameter              | Description                         | Default |
-|------------------------|-------------------------------------|---------|
-| `global.imageRegistry` | Globally overrides image registry   | `nil`   |
-| `commonLabels`         | Labels common to all resources      | `nil`   |
-| `commonAnnotations`    | Annotations common to all resources | `nil`   |
-| `affinity`             | Affinity for pod assignment         | `nil`   |
-| `tolerations`          | Tolerations for pod assignment      | `nil`   |
-| `nodeSelector`         | Node labels for pod assignment      | `nil`   |
+### Marquez web service parameters
 
-### Service **parameters**
+| Parameter                    | Description                    | Default     |
+|------------------------------|--------------------------------|-------------|
+| `web.service.type`           | Marquez service type           | `ClusterIP` |
+| `web.service.port`           | Marquez service port           | `9444`      |
+| `web.service.nodePort`       | Marquez service nodePort       | `""`        |
+| `web.service.loadBalancerIP` | Marquez service loadBalancerIP | `""`        |
+| `web.service.annotations`    | Marquez service annotations    | `{}`        |
 
-| Parameter             | Description                         | Default     |
-|-----------------------|-------------------------------------|-------------|
-| `service.type`        | Networking type of all services     | `ClusterIP` |
-| `service.port`        | Port to expose services             | `80`        |
-| `service.annotations` | Annotations applied to all services | `nil`       |
+### PostgreSQL parameters
 
-### Ingress **parameters**
+| Parameter                  | Description                | Default          |
+|----------------------------|----------------------------|------------------|
+| `postgresql.enabled`       | Deploy PostgreSQL subchart | `false`          |
+| `postgresql.auth.username` | PostgreSQL username        | `ilum`           |
+| `postgresql.auth.password` | PostgreSQL password        | `CHANGEMEPLEASE` |
+| `postgresql.auth.database` | PostgreSQL database        | `marquez`        |
 
-| Parameter             | Description                        | Default |
-|-----------------------|------------------------------------|---------|
-| `ingress.enabled`     | Enables ingress settings           | `false` |
-| `ingress.annotations` | Annotations applied to ingress     | `nil`   |
-| `ingress.hosts`       | Hostname applied to ingress routes | `nil`   |
-| `ingress.tls`         | TLS settings for hostname          | `nil`   |
+### Other parameters
+
+| Parameter               | Description                           | Default |
+|-------------------------|---------------------------------------|---------|
+| `commonLabels`          | Labels to apply to all resources      | `{}`    |
+| `commonAnnotations`     | Annotations to apply to all resources | `{}`    |
+| `serviceAccount.create` | Create ServiceAccount                 | `true`  |
+| `serviceAccount.name`   | ServiceAccount name to use            | `""`    |
+| `ingress.enabled`       | Enable Ingress                        | `false` |
 
 ## Local Installation Guide
 
@@ -132,7 +112,7 @@ helm delete marquez
 The quickest way to install Marquez via Kubernetes is to create a local Postgres instance.
 
 ```bash
-helm install marquez . --dependency-update --set postgresql.enabled=true
+helm install ilum-marquez . --dependency-update --set postgresql.enabled=true
 ```
 
 ### Docker Postgres
@@ -158,7 +138,7 @@ the `values.yaml` file or within the Helm CLI command. Again, remove the
 pesky markdown escape character before running this command.
 
 ```bash
-helm install marquez . --dependency-update --set marquez.db.host=$marquez_db_ip
+helm install ilum-marquez . --dependency-update --set marquez.db.host=$marquez_db_ip
 ```
 
 ### Validation
@@ -168,18 +148,18 @@ tests can be executed by running the following Helm command. You should see a st
 of `Succeeded` for each test if the HTTP endpoints were reachable.
 
 ```bash
-helm test marquez
+helm test ilum-marquez
 ```
 
 If you haven't configured ingress within the Helm chart values, then you can use the
 following port forwarding rules to support local development.
 
 ```bash
-kubectl port-forward svc/marquez 5000:80
+kubectl port-forward svc/ilum-marquez 5000:80
 ```
 
 ```bash
-kubectl port-forward svc/marquez-web 3000:80
+kubectl port-forward svc/ilum-marquez-web 3000:80
 ```
 
 Once these rules are in place, you can view both the APIs and UI using the
@@ -202,11 +182,3 @@ networking issues, credentials, etc.
 ```bash
 kubectl logs -p <podName>
 ```
-
-## Contributing
-
-See [CONTRIBUTING.md](https://github.com/MarquezProject/marquez-chart/blob/master/CONTRIBUTING.md) for more details about how to contribute.
-
-----
-SPDX-License-Identifier: Apache-2.0
-Copyright 2018-2023 contributors to the Marquez project.

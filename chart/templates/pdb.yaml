@@ -1,0 +1,39 @@
+{{- if .Values.marquez.pdb.create }}
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "ilum-marquez.fullname" . }}
+  labels:
+    {{- include "ilum-marquez.labels" . | nindent 4 }}
+    app.kubernetes.io/component: marquez
+spec:
+  {{- if .Values.marquez.pdb.minAvailable }}
+  minAvailable: {{ .Values.marquez.pdb.minAvailable }}
+  {{- end }}
+  {{- if .Values.marquez.pdb.maxUnavailable }}
+  maxUnavailable: {{ .Values.marquez.pdb.maxUnavailable }}
+  {{- end }}
+  selector:
+    matchLabels:
+      app: ilum-marquez
+{{- end }}
+---
+{{- if and .Values.web.enabled .Values.web.pdb.create }}
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "ilum-marquez.fullname" . }}-web
+  labels:
+    {{- include "ilum-marquez.labels" . | nindent 4 }}
+    app.kubernetes.io/component: web
+spec:
+  {{- if .Values.web.pdb.minAvailable }}
+  minAvailable: {{ .Values.web.pdb.minAvailable }}
+  {{- end }}
+  {{- if .Values.web.pdb.maxUnavailable }}
+  maxUnavailable: {{ .Values.web.pdb.maxUnavailable }}
+  {{- end }}
+  selector:
+    matchLabels:
+      app: ilum-marquez-web
+{{- end }}

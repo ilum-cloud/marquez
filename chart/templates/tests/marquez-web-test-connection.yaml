@@ -2,21 +2,19 @@
 apiVersion: v1
 kind: Pod
 metadata:
-  name: "{{ include "common.names.fullname" . }}-web-test-connection"
-  labels: {{- include "common.labels.standard" . | nindent 4 }}
-    {{- if .Values.commonLabels }}
-    {{- include "common.tplvalues.render" (dict "value" .Values.commonLabels "context" $) | nindent 4 }}
-    {{- end }}
+  name: "{{ include "ilum-marquez.fullname" . }}-web-test-connection"
+  labels:
+    {{- include "ilum-marquez.labels" . | nindent 4 }}
   annotations:
     "helm.sh/hook": test-success
     {{- if .Values.commonAnnotations }}
-    {{- include "common.tplvalues.render" (dict "value" .Values.commonAnnotations "context" $) | nindent 4 }}
+    {{- toYaml .Values.commonAnnotations | nindent 4 }}
     {{- end }}
 spec:
   containers:
     - name: wget
       image: busybox
       command: ['wget']
-      args:  ['{{ include "common.names.fullname" . }}-web:{{ .Values.service.port }}']
+      args:  ['{{ include "ilum-marquez.fullname" . }}-web:{{ .Values.web.service.port }}']
   restartPolicy: Never
 {{- end }}

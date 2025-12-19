@@ -1,26 +1,28 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ include "common.names.fullname" . }}
-  labels: {{- include "common.labels.standard" . | nindent 4 }}
-    {{- if .Values.commonLabels }}
-    {{- include "common.tplvalues.render" (dict "value" .Values.commonLabels "context" $) | nindent 4 }}
-    {{- end }}
-    app.kubernetes.io/component: marquez
+  name: {{ include "ilum-marquez.fullname" . }}
+  labels:
+    {{- include "ilum-marquez.labels" . | nindent 4 }}
+  {{- with .Values.marquez.service.annotations }}
   annotations:
-    {{- if .Values.commonAnnotations }}
-    {{- include "common.tplvalues.render" (dict "value" .Values.commonAnnotations "context" $) | nindent 4 }}
-    {{- end }}
-    {{- range $key, $value := .Values.service.annotations }}
-    {{ $key }}: {{ include "common.tplvalues.render" (dict "value" $value "context" $) | quote }}
-    {{- end }}
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
 spec:
-  type: {{ .Values.service.type }}
+  type: {{ .Values.marquez.service.type }}
+  {{- if and (eq .Values.marquez.service.type "ClusterIP") .Values.marquez.service.clusterIP }}
+  clusterIP: {{ .Values.marquez.service.clusterIP }}
+  {{- end }}
+  {{- if and (eq .Values.marquez.service.type "LoadBalancer") .Values.marquez.service.loadBalancerIP }}
+  loadBalancerIP: {{ .Values.marquez.service.loadBalancerIP }}
+  {{- end }}
   ports:
-    - port: {{ .Values.service.port }}
+    - name: http
+      port: {{ .Values.marquez.service.port }}
       targetPort: http
-      protocol: TCP
-      name: http
-
-  selector: {{- include "common.labels.matchLabels" . | nindent 4 }}
-    app.kubernetes.io/component: marquez
+      {{- if and (or (eq .Values.marquez.service.type "LoadBalancer") (eq .Values.marquez.service.type "NodePort")) .Values.marquez.service.nodePort }}
+      nodePort: {{ .Values.marquez.service.nodePort }}
+      {{- end }}
+  selector:
+    {{- include "ilum-marquez.selectorLabels" . | nindent 4 }}
+    app: ilum-marquez
