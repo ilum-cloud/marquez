@@ -81,7 +81,15 @@ spec:
             - name: POSTGRES_USER
               value: {{ .Values.marquez.db.user | quote }}
             - name: PGPASSWORD
-              value: {{ .Values.marquez.db.password | quote }}
+              valueFrom:
+                secretKeyRef:
+                  {{- if .Values.marquez.existingSecretName }}
+                  name: {{ .Values.marquez.existingSecretName }}
+                  key: marquez-db-password
+                  {{- else }}
+                  name: {{ include "ilum-marquez.fullname" . }}
+                  key: marquez-db-password
+                  {{- end }}
             - name: POSTGRES_DB
               value: {{ .Values.marquez.db.name | quote }}
         {{- end }}
