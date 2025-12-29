@@ -1,8 +1,4 @@
-<div align="center">
-  <a href="https://ilum.cloud/">
-    <img src="./docs/assets/images/ilum-marquez.png" width="700px" alt="ilum marquez"/>
-  </a>
-</div>
+https://github.com/user-attachments/assets/db70aa84-326e-468a-acd6-832d60c93651
 
 **[Ilum](https://ilum.cloud/) fork.** This is an Ilum-maintained fork of Marquez created while upstream development slowed. We used it to ship critical fixes and additive features without breaking compatibility. From **0.52.x**, we’re aligning with upstream and contributing improvements back. Learn more in our short write-up: [Ilum × Marquez — Project Description & Rationale](ILUMxMARQUEZ.md).
 
@@ -38,6 +34,12 @@ Want to be added? Send a pull request our way!
 * [CsvPath](https://www.csvpath.org)
 
 ## Quickstart
+
+<div align="center">
+  <a href="https://ilum.cloud/">
+    <img src="./docs/assets/images/ilum-marquez.png" width="700px" alt="ilum marquez"/>
+  </a>
+</div>
 
 Marquez provides a simple way to collect and view _dataset_, _job_, and _run_ metadata using [OpenLineage](https://openlineage.io). The easiest way to get up and running is with Docker. From the base of the Marquez repository, run:
 
