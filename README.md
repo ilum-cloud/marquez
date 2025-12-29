@@ -4,7 +4,7 @@
   </a>
 </div>
 
-**Ilum fork.** This is an Ilum-maintained fork of Marquez created while upstream development slowed. We used it to ship critical fixes and additive features without breaking compatibility. From **0.52.x**, we’re aligning with upstream and contributing improvements back. Learn more in our short write-up: [Ilum × Marquez — Project Description & Rationale](ILUMxMARQUEZ.md).
+**[Ilum](https://ilum.cloud/) fork.** This is an Ilum-maintained fork of Marquez created while upstream development slowed. We used it to ship critical fixes and additive features without breaking compatibility. From **0.52.x**, we’re aligning with upstream and contributing improvements back. Learn more in our short write-up: [Ilum × Marquez — Project Description & Rationale](ILUMxMARQUEZ.md).
 
 <div align="center">
   <img src="./docs/assets/images/marquez-logo.png" width="500px" />
@@ -17,16 +17,11 @@ Marquez is an open source **metadata service** for the **collection**, **aggrega
 
 ## Badges
 
-[![CircleCI](https://circleci.com/gh/MarquezProject/marquez/tree/main.svg?style=shield)](https://circleci.com/gh/MarquezProject/marquez/tree/main)
-[![codecov](https://codecov.io/gh/MarquezProject/marquez/branch/main/graph/badge.svg)](https://codecov.io/gh/MarquezProject/marquez/branch/main)
-[![status](https://img.shields.io/badge/status-active-brightgreen.svg)](#status)
-[![Slack](https://img.shields.io/badge/slack-chat-blue.svg)](https://join.slack.com/t/marquezproject/shared_invite/zt-2iylxasbq-GG_zXNcJdNrhC9uUMr3B7A)
-[![license](https://img.shields.io/badge/license-Apache_2.0-blue.svg)](https://raw.githubusercontent.com/MarquezProject/marquez/main/LICENSE)
+[![Slack](https://custom-icon-badges.demolab.com/badge/Slack-4A154B?logo=slack&logoColor=fff)](https://join.slack.com/t/ilum-cloud/shared_invite/zt-3jufrwyr9-HFrIbybdr9A3vE3fYaxgyg)
+[![Docker](https://img.shields.io/badge/Docker-2496ED?logo=docker&logoColor=fff)](https://hub.docker.com/r/ilum/marquez)
+[![Helm](https://img.shields.io/badge/Helm-0F1689?logo=helm&logoColor=fff)](https://artifacthub.io/packages/helm/ilum/ilum-marquez)
+[![license](https://img.shields.io/badge/license-Apache_2.0-blue.svg)](https://raw.githubusercontent.com/ilum-cloud/marquez/main/LICENSE)
 [![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-v2.0%20adopted-ff69b4.svg)](CODE_OF_CONDUCT.md)
-[![maven](https://img.shields.io/maven-central/v/io.github.marquezproject/marquez-api.svg)](https://search.maven.org/search?q=g:io.github.marquezproject)
-[![docker](https://img.shields.io/badge/docker-hub-blue.svg?style=flat)](https://hub.docker.com/r/marquezproject/marquez)
-[![Known Vulnerabilities](https://snyk.io/test/github/MarquezProject/marquez/badge.svg)](https://snyk.io/test/github/MarquezProject/marquez)
-[![CII Best Practices](https://bestpractices.coreinfrastructure.org/projects/5160/badge)](https://bestpractices.coreinfrastructure.org/projects/5160)
 
 ## Status
 
@@ -41,10 +36,6 @@ Want to be added? Send a pull request our way!
 * [Northwestern Mutual](https://www.northwesternmutual.com)
 * [Ilum](https://ilum.cloud)
 * [CsvPath](https://www.csvpath.org)
-
-## Try it!
-
-[![Open in Gitpod](https://gitpod.io/button/open-in-gitpod.svg)](https://gitpod.io/#https://github.com/MarquezProject/marquez)
 
 ## Quickstart
 
@@ -106,9 +97,10 @@ Versions of Marquez are compatible with OpenLineage unless noted otherwise. We e
 
 | **Marquez**                                                                                      | **OpenLineage**                                               | **Status**    |
 |--------------------------------------------------------------------------------------------------|---------------------------------------------------------------|---------------|
-| [`UNRELEASED`](https://github.com/MarquezProject/marquez/blob/main/CHANGELOG.md#unreleased)      | [`2-0-2`](https://openlineage.io/spec/2-0-2/OpenLineage.json) | `CURRENT`     |
-| [`0.50.0`](https://github.com/MarquezProject/marquez/blob/main/CHANGELOG.md#0500---2024-10-23)   | [`2-0-2`](https://openlineage.io/spec/2-0-2/OpenLineage.json) | `RECOMMENDED` |
-| [`0.49.0`](https://github.com/MarquezProject/marquez/blob/0.49.0/CHANGELOG.md#0490---2024-08-07) | [`2-0-2`](https://openlineage.io/spec/2-0-2/OpenLineage.json) | `MAINTENANCE` |
+| [`UNRELEASED`](https://github.com/ilum-cloud/marquez/blob/main/CHANGELOG.md#unreleased)          | [`2-0-2`](https://openlineage.io/spec/2-0-2/OpenLineage.json) | `CURRENT`     |
+| [`0.53.0`](https://github.com/ilum-cloud/marquez/blob/main/CHANGELOG.md#0530---2025-08-30)       | [`2-0-2`](https://openlineage.io/spec/2-0-2/OpenLineage.json) | `RECOMMENDED` |
+| [`0.50.0`](https://github.com/MarquezProject/marquez/blob/main/CHANGELOG.md#0500---2024-10-23)   | [`2-0-2`](https://openlineage.io/spec/2-0-2/OpenLineage.json) | `DEPRECATED`  |
+| [`0.49.0`](https://github.com/MarquezProject/marquez/blob/0.49.0/CHANGELOG.md#0490---2024-08-07) | [`2-0-2`](https://openlineage.io/spec/2-0-2/OpenLineage.json) | `DEPRECATED`  |
 
 > **Note:** The [`openlineage-python`](https://pypi.org/project/openlineage-python) and [`openlineage-java`](https://central.sonatype.com/artifact/io.openlineage/openlineage-java) libraries will a higher version than the OpenLineage [specification](https://github.com/OpenLineage/OpenLineage/tree/main/spec) as they have different version requirements.
 
@@ -186,14 +178,13 @@ Marquez listens on port `8080` for all API calls and port `8081` for the admin i
 
 ## Getting Involved
 
-* Website: https://marquezproject.github.io/marquez/
-* Source: https://github.com/MarquezProject/marquez
-* Chat: [MarquezProject Slack](https://join.slack.com/t/marquezproject/shared_invite/zt-2iylxasbq-GG_zXNcJdNrhC9uUMr3B7A)
-* X: [@MarquezProject](https://twitter.com/MarquezProject)
+* Website: https://ilum.cloud/
+* Source: https://github.com/ilum-cloud/marquez
+* Chat: [Ilum Slack](https://join.slack.com/t/ilum-cloud/shared_invite/zt-3jufrwyr9-HFrIbybdr9A3vE3fYaxgyg)
 
 ## Contributing
 
-See [CONTRIBUTING.md](https://github.com/MarquezProject/marquez/blob/main/CONTRIBUTING.md) for more details about how to contribute.
+See [CONTRIBUTING.md](https://github.com/ilum-cloud/marquez/blob/main/CONTRIBUTING.md) for more details about how to contribute.
 
 ## Reporting a Vulnerability
 

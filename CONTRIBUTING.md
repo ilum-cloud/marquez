@@ -3,14 +3,14 @@
 We're excited you're interested in contributing to Marquez! We'd love your help, and there are plenty of ways to contribute:
 
 * Give the repo a star
-* Join our [slack](https://join.slack.com/t/marquezproject/shared_invite/zt-2iylxasbq-GG_zXNcJdNrhC9uUMr3B7A) channel and leave us feedback or help with answering questions from the community
-* Fix or [report](https://github.com/MarquezProject/marquez/issues/new) a bug
+* Join our [slack](https://join.slack.com/t/ilum-cloud/shared_invite/zt-3jufrwyr9-HFrIbybdr9A3vE3fYaxgyg) channel and leave us feedback or help with answering questions from the community
+* Fix or [report](https://github.com/ilum-cloud/marquez/issues/new) a bug
 * Fix or improve documentation
-* For newcomers, pick up a ["good first issue"](https://github.com/MarquezProject/marquez/labels/good%20first%20issue), then send a pull request our way (see the [resources](#resources) section below for helpful links to get started)
+* For newcomers, pick up a ["good first issue"](https://github.com/ilum-cloud/marquez/labels/good%20first%20issue), then send a pull request our way (see the [resources](#resources) section below for helpful links to get started)
 
-We feel that a welcoming community is important and we ask that you follow the [Contributor Covenant Code of Conduct](https://github.com/MarquezProject/marquez/blob/main/CODE_OF_CONDUCT.md) in all interactions with the community.
+We feel that a welcoming community is important and we ask that you follow the [Contributor Covenant Code of Conduct](https://github.com/ilum-cloud/marquez/blob/main/CODE_OF_CONDUCT.md) in all interactions with the community.
 
-If you’re interested in using or learning more about Marquez, reach out to us on our [slack](https://join.slack.com/t/marquezproject/shared_invite/zt-2iylxasbq-GG_zXNcJdNrhC9uUMr3B7A) channel and follow [@MarquezProject](https://twitter.com/MarquezProject) for updates. We also encourage new comers to [join](https://lists.lfaidata.foundation/g/marquez-technical-discuss/ics/invite.ics?repeatid=32038) our monthly community meeting!
+If you’re interested in using or learning more about Marquez, reach out to us on our [slack](https://join.slack.com/t/ilum-cloud/shared_invite/zt-3jufrwyr9-HFrIbybdr9A3vE3fYaxgyg) channel.
 
 # Getting Your Changes Approved
 
@@ -119,7 +119,7 @@ $ ./gradlew publishToMavenLocal
 
 # Submitting a [Pull Request](https://help.github.com/articles/about-pull-requests)
 
-1. [Fork](https://github.com/MarquezProject/marquez/fork) and clone the repository
+1. [Fork](https://github.com/ilum-cloud/marquez/fork) and clone the repository
 2. Make sure all tests pass locally: `./gradlew :api:test`
 3. Create a new [branch](#branching): `git checkout -b feature/my-cool-new-feature`
 4. Make a change on your cool new branch
@@ -127,7 +127,7 @@ $ ./gradlew publishToMavenLocal
 6. Make sure `.java` files are formatted: `./gradlew spotlessJavaCheck`
 7. Make sure `.java` files contain a [copyright and license header](#copyright--license)
 8. Make sure to [sign you work](#sign-your-work)
-9. Push the change to your fork and [submit a pull request](https://github.com/MarquezProject/marquez/compare)
+9. Push the change to your fork and [submit a pull request](https://github.com/ilum-cloud/marquez/compare)
 10. Work with project maintainers to get your change reviewed and merged into the `main` branch
 11. Delete your branch
 
@@ -168,7 +168,7 @@ To ensure your pull request is accepted, follow these guidelines:
 
 We use [renovate](https://github.com/renovatebot/renovate) to manage dependencies for most of our project modules,
 with a couple of exceptions. Renovate automatically detects new dependency versions and opens pull
-requests to upgrade dependencies in accordance with the [configured rules](https://github.com/MarquezProject/marquez/blob/main/renovate.json).
+requests to upgrade dependencies in accordance with the [configured rules](https://github.com/ilum-cloud/marquez/blob/main/renovate.json).
 
 The following dependencies are managed manually:
 
@@ -192,7 +192,7 @@ Git has a [`-s`](https://git-scm.com/docs/git-commit#Documentation/git-commit.tx
 $ git commit -s -m "This is my commit message"
 ```
 
-# API [Docs](https://github.com/MarquezProject/marquez/tree/main/docs)
+# API [Docs](https://github.com/ilum-cloud/marquez/tree/main/docs)
 
 To bundle:
 

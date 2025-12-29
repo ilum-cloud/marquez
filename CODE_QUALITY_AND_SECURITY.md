@@ -26,8 +26,7 @@ The specific security and analysis methodologies that we employ include but are 
 
 For more information about our approach to quality and security, feel free to reach out to the Marquez development team:
 
-- Slack: [Marquezproject.slack.com](https://join.slack.com/t/marquezproject/shared_invite/zt-2iylxasbq-GG_zXNcJdNrhC9uUMr3B7A)
-- Twitter: [@MarquezProject](https://twitter.com/MarquezProject)
+- Slack: [Ilum Cloud Slack](https://join.slack.com/t/ilum-cloud/shared_invite/zt-3jufrwyr9-HFrIbybdr9A3vE3fYaxgyg)
 
 ----
 SPDX-License-Identifier: Apache-2.0
