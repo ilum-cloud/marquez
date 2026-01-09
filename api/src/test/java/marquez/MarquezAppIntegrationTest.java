@@ -200,7 +200,11 @@ public class MarquezAppIntegrationTest extends BaseIntegrationTest {
             .build();
     final Dataset dataset =
         client.createDataset(NAMESPACE_NAME, datasetName.getValue(), dbTableMeta);
-    assertThat(dataset.getFields()).containsExactly(field0, field1);
+    
+    // We expect the type to be UNKNOWN if the input type is null to avoid duplicate rows
+    // in the dataset_fields table.
+    final Field expectedField1 = Field.builder().name("field1").type("UNKNOWN").build();
+    assertThat(dataset.getFields()).containsExactly(field0, expectedField1);
   }
 
   @Test

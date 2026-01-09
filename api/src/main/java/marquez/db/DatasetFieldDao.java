@@ -262,7 +262,7 @@ public interface DatasetFieldDao extends BaseDao {
           + "description"
           + ") VALUES ("
           + ":uuid, "
-          + ":type, "
+          + "COALESCE(:type, 'UNKNOWN'), "
           + ":now, "
           + ":now, "
           + ":datasetUuid, "
