@@ -1,0 +1,1 @@
+CREATE INDEX job_versions_io_mapping_dataset_uuid_is_current_idx ON job_versions_io_mapping (dataset_uuid, is_current_job_version);

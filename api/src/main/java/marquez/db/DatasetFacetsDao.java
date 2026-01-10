@@ -42,7 +42,8 @@ public interface DatasetFacetsDao {
     OWNERSHIP(Type.DATASET, "ownership"),
     DATA_QUALITY_METRICS(Type.INPUT, "dataQualityMetrics"),
     DATA_QUALITY_ASSERTIONS(Type.INPUT, "dataQualityAssertions"),
-    OUTPUT_STATISTICS(Type.OUTPUT, "outputStatistics");
+    OUTPUT_STATISTICS(Type.OUTPUT, "outputStatistics"),
+    LINEAGE_STATISTICS(Type.DATASET, "lineageStatistics");
 
     final Type type;
     final String name;
@@ -201,6 +202,91 @@ public interface DatasetFacetsDao {
                     fieldName,
                     FacetUtils.toPgObject(fieldName, jsonNode.get(fieldName))));
   }
+
+  @SqlUpdate(
+      """
+      WITH io AS (
+          SELECT io_type, job_uuid
+          FROM job_versions_io_mapping
+          WHERE dataset_uuid = :datasetUuid AND is_current_job_version = TRUE
+      ),
+      job_info AS (
+          SELECT io.io_type, io.job_uuid, j.namespace_name, j.type
+          FROM io
+          JOIN jobs_view j ON j.uuid = io.job_uuid
+      ),
+      stats AS (
+          SELECT
+              count(DISTINCT CASE WHEN io_type = 'OUTPUT' THEN job_uuid END) AS inEdges,
+              count(DISTINCT CASE WHEN io_type = 'INPUT' THEN job_uuid END) AS outEdges,
+              count(DISTINCT CASE WHEN io_type = 'INPUT' THEN namespace_name END) AS consumingNamespaces,
+              count(DISTINCT CASE WHEN io_type = 'OUTPUT' THEN namespace_name END) AS producingNamespaces,
+              array_agg(DISTINCT CASE WHEN io_type = 'OUTPUT' THEN COALESCE(type, 'UNKNOWN') END) FILTER (WHERE type IS NOT NULL) AS producingJobTypes,
+              array_agg(DISTINCT CASE WHEN io_type = 'INPUT' THEN COALESCE(type, 'UNKNOWN') END) FILTER (WHERE type IS NOT NULL) AS consumingJobTypes
+          FROM job_info
+      )
+      INSERT INTO dataset_facets (
+          created_at, dataset_uuid, dataset_version_uuid, run_uuid,
+          lineage_event_time, lineage_event_type, type, name, facet
+      )
+      SELECT
+          NOW(), :datasetUuid, d.current_version_uuid, NULL,
+          NOW(), 'LINEAGE_UPDATE', 'DATASET', 'lineageStatistics',
+          json_build_object(
+              'inEdges', s.inEdges,
+              'outEdges', s.outEdges,
+              'consumingNamespaces', s.consumingNamespaces,
+              'producingNamespaces', s.producingNamespaces,
+              'producingJobTypes', COALESCE(s.producingJobTypes, ARRAY[]::varchar[]),
+              'consumingJobTypes', COALESCE(s.consumingJobTypes, ARRAY[]::varchar[]),
+              '_producer', 'https://github.com/ilum-cloud/marquez',
+              '_schema', 'https://github.com/ilum-cloud/marquez/spec/facets/lineage-statistics.json'
+          )
+      FROM datasets d, stats s
+      WHERE d.uuid = :datasetUuid AND d.current_version_uuid IS NOT NULL
+      """)
+  void updateLineageStatistics(UUID datasetUuid);
+
+  @SqlUpdate(
+      """
+      WITH io AS (
+          SELECT io_type, job_uuid
+          FROM job_versions_io_mapping
+          WHERE dataset_uuid = :datasetUuid AND is_current_job_version = TRUE
+      ),
+      job_info AS (
+          SELECT io.io_type, io.job_uuid, j.namespace_name, j.type
+          FROM io
+          JOIN jobs_view j ON j.uuid = io.job_uuid
+      ),
+      stats AS (
+          SELECT
+              count(DISTINCT CASE WHEN io_type = 'OUTPUT' THEN job_uuid END) AS inEdges,
+              count(DISTINCT CASE WHEN io_type = 'INPUT' THEN job_uuid END) AS outEdges,
+              array_agg(DISTINCT CASE WHEN io_type = 'INPUT' THEN namespace_name END) FILTER (WHERE namespace_name IS NOT NULL) AS consumingNamespaces,
+              array_agg(DISTINCT CASE WHEN io_type = 'OUTPUT' THEN namespace_name END) FILTER (WHERE namespace_name IS NOT NULL) AS producingNamespaces
+          FROM job_info
+      )
+      INSERT INTO dataset_facets (
+          created_at, dataset_uuid, dataset_version_uuid, run_uuid,
+          lineage_event_time, lineage_event_type, type, name, facet
+      )
+      SELECT
+          NOW(), :datasetUuid, :datasetVersionUuid, NULL,
+          NOW(), 'LINEAGE_UPDATE', 'DATASET', 'lineageStatistics',
+          json_build_object(
+            'lineageStatistics', json_build_object(
+              'inEdges', s.inEdges,
+              'outEdges', s.outEdges,
+              'consumingNamespaces', COALESCE(s.consumingNamespaces, ARRAY[]::varchar[]),
+              'producingNamespaces', COALESCE(s.producingNamespaces, ARRAY[]::varchar[]),
+              '_producer', 'https://github.com/ilum-cloud/marquez',
+              '_schema', 'https://github.com/ilum-cloud/marquez/spec/facets/lineage-statistics.json'
+            )
+          )
+      FROM stats s
+      """)
+  void updateLineageStatistics(UUID datasetUuid, UUID datasetVersionUuid);
 
   record DatasetFacetRow(
       Instant createdAt,
