@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/ilum-cloud/marquez/spec/facets/lineage-statistics.json",
+  "type": "object",
+  "properties": {
+    "inEdges": {
+      "type": "integer",
+      "description": "Number of unique jobs producing this dataset."
+    },
+    "outEdges": {
+      "type": "integer",
+      "description": "Number of unique jobs consuming this dataset."
+    },
+    "producingNamespaces": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "List of distinct namespaces producing this dataset."
+    },
+    "consumingNamespaces": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "List of distinct namespaces consuming this dataset."
+    },
+    "_producer": {
+      "type": "string"
+    },
+    "_schema": {
+      "type": "string"
+    }
+  },
+  "required": ["inEdges", "outEdges", "_producer", "_schema"]
+}
