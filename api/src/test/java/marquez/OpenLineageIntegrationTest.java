@@ -1516,7 +1516,7 @@ public class OpenLineageIntegrationTest extends BaseIntegrationTest {
               .convertValue(filterDataQualityFacets(dataset.getFacets()), JsonNode.class);
       assertThat(facetsForDataset).isEqualTo(expectedFacets);
     } else {
-      assertThat(dataset.getFacets()).isEmpty();
+      assertThat(filterDataQualityFacets(dataset.getFacets())).isEmpty();
     }
   }
 
@@ -1538,7 +1538,7 @@ public class OpenLineageIntegrationTest extends BaseIntegrationTest {
                   filterDataQualityFacets(latestDatasetVersion.getFacets()), JsonNode.class);
       assertThat(facetsForDatasetVersion).isEqualTo(expectedFacets);
     } else {
-      assertThat(latestDatasetVersion.getFacets()).isEmpty();
+      assertThat(filterDataQualityFacets(latestDatasetVersion.getFacets())).isEmpty();
     }
   }
 
@@ -1549,7 +1549,7 @@ public class OpenLineageIntegrationTest extends BaseIntegrationTest {
         new Predicate<String>() {
           @Override
           public boolean apply(String key) {
-            return !key.contains("dataQuality");
+            return !key.contains("dataQuality") && !key.equals("lineageStatistics");
           }
         });
   }

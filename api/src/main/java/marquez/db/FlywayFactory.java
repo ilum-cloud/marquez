@@ -9,6 +9,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import jakarta.annotation.Nullable;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import javax.sql.DataSource;
@@ -85,16 +86,13 @@ public final class FlywayFactory {
         .group(group)
         .installedBy(installedBy)
         .mixed(mixed)
-        .ignoreMissingMigrations(ignoreMissingMigrations)
-        .ignoreIgnoredMigrations(ignoreIgnoredMigrations)
-        .ignorePendingMigrations(ignorePendingMigrations)
-        .ignoreFutureMigrations(ignoreFutureMigrations)
+        .ignoreMigrationPatterns(buildIgnorePatternsList().toArray(String[]::new))
         .validateMigrationNaming(validateMigrationNaming)
         .validateOnMigrate(validateOnMigrate)
         .cleanOnValidationError(cleanOnValidationError)
         .cleanDisabled(cleanDisabled)
         .outOfOrder(outOfOrder)
-        .locations(locations.stream().toArray(String[]::new))
+        .locations(locations.toArray(String[]::new))
         .encoding(encoding)
         .table(table)
         .tablespace(tablespace)
@@ -106,5 +104,22 @@ public final class FlywayFactory {
         .repeatableSqlMigrationPrefix(repeatableSqlMigrationPrefix)
         .defaultSchema(schema)
         .load();
+  }
+
+  private List<String> buildIgnorePatternsList() {
+    List<String> ignorePatterns = new ArrayList<>();
+    if (ignoreMissingMigrations) {
+      ignorePatterns.add("*:missing");
+    }
+    if (ignoreIgnoredMigrations) {
+      ignorePatterns.add("*:ignored");
+    }
+    if (ignorePendingMigrations) {
+      ignorePatterns.add("*:pending");
+    }
+    if (ignoreFutureMigrations) {
+      ignorePatterns.add("*:future");
+    }
+    return ignorePatterns;
   }
 }

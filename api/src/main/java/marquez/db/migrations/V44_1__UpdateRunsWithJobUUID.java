@@ -75,14 +75,4 @@ public class V44_1__UpdateRunsWithJobUUID implements JavaMigration {
   public Integer getChecksum() {
     return null;
   }
-
-  @Override
-  public boolean isUndo() {
-    return false;
-  }
-
-  @Override
-  public boolean isBaselineMigration() {
-    return false;
-  }
 }

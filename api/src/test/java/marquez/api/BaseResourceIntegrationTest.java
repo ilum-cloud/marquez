@@ -58,7 +58,7 @@ abstract class BaseResourceIntegrationTest {
   static final String ERROR_FAIL_IF_NOT_IN = "Expected '%s' in '%s'.";
 
   @Container
-  static final PostgreSQLContainer<?> DB_CONTAINER = new PostgreSQLContainer<>("postgres:14");
+  static final PostgreSQLContainer<?> DB_CONTAINER = new PostgreSQLContainer<>("postgres:16");
 
   static {
     DB_CONTAINER.start();

@@ -18,6 +18,7 @@ import static org.assertj.core.api.Assertions.fail;
 import io.openlineage.client.OpenLineage;
 import java.net.URI;
 import java.time.Instant;
+import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Optional;
@@ -45,7 +46,8 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
-@Tag("DataAccessTests, IntegrationTests")
+@Tag("DataAccessTests")
+@Tag("IntegrationTests")
 @Testcontainers
 public class StatsTest {
   static final DockerImageName POSTGRES_16 = DockerImageName.parse("postgres:16");
@@ -147,10 +149,30 @@ public class StatsTest {
     assertThat(lastWeekLineageMetrics.get(lastWeekLineageMetrics.size() - 3).getComplete())
         .as("Events from 2 days ago")
         .isEqualTo(dayEvents);
-    // Events from today should be aggregated in the last bucket
-    assertThat(lastWeekLineageMetrics.get(lastWeekLineageMetrics.size() - 1).getComplete())
-        .as("Today's total events")
-        .isEqualTo(secondEvents + hourEvents);
+
+    // Determine if the 1-hour-old events fall into today or yesterday (based on UTC)
+    Instant now = Instant.now();
+    Instant oneHourAgo = now.minus(1, ChronoUnit.HOURS);
+    boolean isOneHourAgoToday =
+        now.atZone(ZoneId.of("UTC"))
+            .toLocalDate()
+            .equals(oneHourAgo.atZone(ZoneId.of("UTC")).toLocalDate());
+
+    if (isOneHourAgoToday) {
+      // Events from today should be aggregated in the last bucket
+      assertThat(lastWeekLineageMetrics.get(lastWeekLineageMetrics.size() - 1).getComplete())
+          .as("Today's total events")
+          .isEqualTo(secondEvents + hourEvents);
+    } else {
+      // Events from today (only the 10-second-old one)
+      assertThat(lastWeekLineageMetrics.get(lastWeekLineageMetrics.size() - 1).getComplete())
+          .as("Today's total events")
+          .isEqualTo(secondEvents);
+      // Events from yesterday (the 1-hour-old ones)
+      assertThat(lastWeekLineageMetrics.get(lastWeekLineageMetrics.size() - 2).getComplete())
+          .as("Yesterday's total events")
+          .isEqualTo(hourEvents);
+    }
 
     // Verify no failed events
     assertThat(lastDayLineageMetrics.stream().mapToInt(LineageMetric::getFail).sum())

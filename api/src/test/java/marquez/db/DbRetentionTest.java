@@ -57,7 +57,8 @@ import org.testcontainers.shaded.com.google.common.collect.ImmutableSet;
 import org.testcontainers.utility.DockerImageName;
 
 /** The test suite for {@link DbRetention}. */
-@Tag("DataAccessTests, IntegrationTests")
+@Tag("DataAccessTests")
+@Tag("IntegrationTests")
 @Testcontainers
 public class DbRetentionTest {
   private static final int NUMBER_OF_ROWS_PER_BATCH = 10;

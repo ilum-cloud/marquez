@@ -143,17 +143,7 @@ public class V44_3_BackfillJobsWithParents implements JavaMigration {
   }
 
   @Override
-  public boolean isUndo() {
-    return false;
-  }
-
-  @Override
   public boolean canExecuteInTransaction() {
-    return false;
-  }
-
-  @Override
-  public boolean isBaselineMigration() {
     return false;
   }
 }

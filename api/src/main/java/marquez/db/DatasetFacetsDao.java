@@ -233,6 +233,7 @@ public interface DatasetFacetsDao {
           NOW(), :datasetUuid, d.current_version_uuid, NULL,
           NOW(), 'LINEAGE_UPDATE', 'DATASET', 'lineageStatistics',
           json_build_object(
+            'lineageStatistics', json_build_object(
               'inEdges', s.inEdges,
               'outEdges', s.outEdges,
               'consumingNamespaces', s.consumingNamespaces,
@@ -241,6 +242,7 @@ public interface DatasetFacetsDao {
               'consumingJobTypes', COALESCE(s.consumingJobTypes, ARRAY[]::varchar[]),
               '_producer', 'https://github.com/ilum-cloud/marquez',
               '_schema', 'https://github.com/ilum-cloud/marquez/spec/facets/lineage-statistics.json'
+            )
           )
       FROM datasets d, stats s
       WHERE d.uuid = :datasetUuid AND d.current_version_uuid IS NOT NULL
