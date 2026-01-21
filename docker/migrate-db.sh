@@ -115,9 +115,23 @@ if [[ "$MODE" == "backup" ]]; then
   read -p "Are you sure you want to proceed? [y/N] " -n 1 -r
   echo
   if [[ $REPLY =~ ^[Yy]$ ]]; then
-    docker volume rm "${VOLUME_NAME}"
-    echo "Volume '${VOLUME_NAME}' removed."
-    echo "You can now run './docker/up.sh' to start the new Postgres 16 instance."
+    if docker volume rm "${VOLUME_NAME}"; then
+      echo "Volume '${VOLUME_NAME}' removed."
+      echo "You can now run './docker/up.sh' to start the new Postgres 16 instance."
+    else
+      echo
+      read -p "Failed to remove volume. It might be in use. Run './docker/down.sh' to stop containers and retry? [y/N] " -n 1 -r
+      echo
+      if [[ $REPLY =~ ^[Yy]$ ]]; then
+        "$(dirname "${0}")/down.sh"
+        echo "Retrying volume removal..."
+        docker volume rm "${VOLUME_NAME}"
+        echo "Volume '${VOLUME_NAME}' removed."
+        echo "You can now run './docker/up.sh' to start the new Postgres 16 instance."
+      else
+        echo "Volume deletion skipped. You must remove '${VOLUME_NAME}' manually before starting the new version."
+      fi
+    fi
   else
     echo "Volume deletion skipped. You must remove '${VOLUME_NAME}' manually before starting the new version."
   fi
