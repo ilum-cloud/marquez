@@ -200,7 +200,7 @@ public class MarquezAppIntegrationTest extends BaseIntegrationTest {
             .build();
     final Dataset dataset =
         client.createDataset(NAMESPACE_NAME, datasetName.getValue(), dbTableMeta);
-    
+
     // We expect the type to be UNKNOWN if the input type is null to avoid duplicate rows
     // in the dataset_fields table.
     final Field expectedField1 = Field.builder().name("field1").type("UNKNOWN").build();

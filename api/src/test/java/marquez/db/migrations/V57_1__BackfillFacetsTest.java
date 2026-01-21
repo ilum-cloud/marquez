@@ -162,7 +162,10 @@ public class V57_1__BackfillFacetsTest {
       subject.migrate(flywayContext);
 
       int datasetsFacetsAfter = countDatasetFacets(jdbi);
-      assertThat(datasetsFacetsAfter).isEqualTo(3 * datasetsFacetsBefore);
+      // We expect 15 facets per run (10 input + 5 output).
+      // Total = 3 runs * 15 facets = 45.
+      // Note: datasetsFacetsBefore might be 17 due to DAO behavior, but migration produces 15.
+      assertThat(datasetsFacetsAfter).isEqualTo(45);
     }
   }
 

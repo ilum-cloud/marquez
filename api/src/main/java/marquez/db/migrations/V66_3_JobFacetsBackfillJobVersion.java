@@ -44,17 +44,7 @@ public class V66_3_JobFacetsBackfillJobVersion implements JavaMigration {
   }
 
   @Override
-  public boolean isUndo() {
-    return false;
-  }
-
-  @Override
   public boolean canExecuteInTransaction() {
-    return false;
-  }
-
-  @Override
-  public boolean isBaselineMigration() {
     return false;
   }
 }

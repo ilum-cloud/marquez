@@ -1,0 +1,20 @@
+version: "3.7"
+services:
+  airflow:
+    image: ilum/airflow:3.1.1-spark
+    container_name: airflow
+    environment:
+      - OPENLINEAGE_URL=http://api:5000
+      - OPENLINEAGE_NAMESPACE=airflow-example
+      - AIRFLOW__CORE__LOAD_EXAMPLES=true
+      - AIRFLOW__WEBSERVER__RBAC=false
+      - AIRFLOW__CORE__EXECUTOR=LocalExecutor
+      - AIRFLOW__CORE__AUTH_MANAGER=airflow.auth.managers.simple.SimpleAuthManager
+      - AIRFLOW__CORE__SIMPLE_AUTH_MANAGER_ALL_ADMINS=True
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./docker/airflow-entrypoint.sh:/entrypoint.sh
+    entrypoint: ["/entrypoint.sh"]
+    depends_on:
+      - api

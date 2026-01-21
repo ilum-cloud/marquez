@@ -113,6 +113,7 @@ public abstract class JdbiExternalPostgresExtension
         flywayConfig.repeatableSqlMigrationPrefix("Z__");
       }
 
+      flywayConfig.cleanDisabled(false);
       flyway = flywayConfig.load();
       flyway.migrate();
     }

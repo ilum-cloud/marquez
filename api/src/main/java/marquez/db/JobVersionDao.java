@@ -17,7 +17,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import lombok.NonNull;
 import lombok.Value;
 import marquez.api.models.JobVersion;
@@ -84,7 +83,7 @@ public interface JobVersionDao extends BaseDao {
           FROM job_versions jv
           INNER JOIN jobs_view j ON j.uuid=jv.job_uuid
           WHERE j.name = :jobName AND j.namespace_name=:namespaceName
-          ORDER BY jv.created_at DESC
+          ORDER BY jv.created_at DESC, jv.version DESC
       )
       SELECT jv.*,
              dsio.input_datasets,
@@ -455,10 +454,16 @@ public interface JobVersionDao extends BaseDao {
     // For old datasets, use the single-arg method (looks up current version)
     oldInputDatasets.forEach(datasetFacetsDao::updateLineageStatistics);
     // For new datasets, use the two-arg method (explicit version)
-    inputs.forEach(i -> datasetFacetsDao.updateLineageStatistics(i.getDatasetVersionRow().getDatasetUuid(), i.getDatasetVersionRow().getUuid()));
+    inputs.forEach(
+        i ->
+            datasetFacetsDao.updateLineageStatistics(
+                i.getDatasetVersionRow().getDatasetUuid(), i.getDatasetVersionRow().getUuid()));
 
     oldOutputDatasets.forEach(datasetFacetsDao::updateLineageStatistics);
-    outputs.forEach(o -> datasetFacetsDao.updateLineageStatistics(o.getDatasetVersionRow().getDatasetUuid(), o.getDatasetVersionRow().getUuid()));
+    outputs.forEach(
+        o ->
+            datasetFacetsDao.updateLineageStatistics(
+                o.getDatasetVersionRow().getDatasetUuid(), o.getDatasetVersionRow().getUuid()));
 
     return new BagOfJobVersionInfo(
         jobRow,
@@ -520,7 +525,8 @@ public interface JobVersionDao extends BaseDao {
 
     // Link the input datasets to the job version.
     // Fetch current input datasets to identify which ones need a stats update
-    List<UUID> oldInputDatasets = jobVersionDao.findCurrentInputDatasetUuids(jobRowRunDetails.jobRow.getUuid());
+    List<UUID> oldInputDatasets =
+        jobVersionDao.findCurrentInputDatasetUuids(jobRowRunDetails.jobRow.getUuid());
     jobRowRunDetails.jobVersionInputs.forEach(
         jobVersionInput -> {
           jobVersionDao.upsertInputDatasetFor(
@@ -532,7 +538,8 @@ public interface JobVersionDao extends BaseDao {
 
     // Link the output datasets to the job version.
     // Fetch current output datasets to identify which ones need a stats update
-    List<UUID> oldOutputDatasets = jobVersionDao.findCurrentOutputDatasetUuids(jobRowRunDetails.jobRow.getUuid());
+    List<UUID> oldOutputDatasets =
+        jobVersionDao.findCurrentOutputDatasetUuids(jobRowRunDetails.jobRow.getUuid());
     jobRowRunDetails.jobVersionOutputs.forEach(
         jobVersionOutput -> {
           jobVersionDao.upsertOutputDatasetFor(
@@ -562,10 +569,12 @@ public interface JobVersionDao extends BaseDao {
     // For old datasets, use the single-arg method (looks up current version)
     oldInputDatasets.forEach(datasetFacetsDao::updateLineageStatistics);
     // For new datasets, use the two-arg method (explicit version)
-    jobRowRunDetails.jobVersionInputs.forEach(i -> datasetFacetsDao.updateLineageStatistics(i.getDatasetUuid(), i.getUuid()));
+    jobRowRunDetails.jobVersionInputs.forEach(
+        i -> datasetFacetsDao.updateLineageStatistics(i.getDatasetUuid(), i.getUuid()));
 
     oldOutputDatasets.forEach(datasetFacetsDao::updateLineageStatistics);
-    jobRowRunDetails.jobVersionOutputs.forEach(o -> datasetFacetsDao.updateLineageStatistics(o.getDatasetUuid(), o.getUuid()));
+    jobRowRunDetails.jobVersionOutputs.forEach(
+        o -> datasetFacetsDao.updateLineageStatistics(o.getDatasetUuid(), o.getUuid()));
 
     return new BagOfJobVersionInfo(
         jobRowRunDetails.jobRow,

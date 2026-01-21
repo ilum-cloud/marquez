@@ -8,9 +8,9 @@
 set -e
 
 # Version of Marquez
-readonly VERSION=0.53.0
+readonly VERSION=0.53.2
 # Build version of Marquez
-readonly BUILD_VERSION=0.53.0
+readonly BUILD_VERSION=0.53.2
 
 title() {
   echo -e "\033[1m${1}\033[0m"
@@ -52,6 +52,7 @@ usage() {
   echo "  -b, --build           build images from source"
   echo "  -s, --seed            seed HTTP API server with metadata"
   echo "  -d, --detach          run in the background"
+  echo "  --airflow             start airflow"
   echo "  --no-web              don't start the web UI"
   echo "  --no-search           don't start search"
   echo "  --no-volumes          don't create volumes"
@@ -118,6 +119,7 @@ while [ $# -gt 0 ]; do
        SEED='true'
        ;;
     -d|'--detach') DETACH='true' ;;
+    --airflow) AIRFLOW='true' ;;
     --no-web) NO_WEB='true' ;;
     --no-search) NO_SEARCH='true' ;;
     --no-volumes) NO_VOLUMES='true' ;;
@@ -160,6 +162,11 @@ if [[ "${NO_SEARCH}" = "false" ]]; then
   compose_files+=" -f docker-compose.search.yml"
 fi
 
+# Enable Airflow example
+if [[ "${AIRFLOW}" = "true" ]]; then
+  compose_files+=" -f docker-compose.airflow.yml"
+fi
+
 # Create docker volumes for Marquez
 if [[ "${NO_VOLUMES}" = "false" ]]; then
   ./docker/volumes.sh $(basename "$project_root")
@@ -169,6 +176,25 @@ fi
 SEARCH_ENABLED="true"
 if [[ "${NO_SEARCH}" = "true" ]]; then
   SEARCH_ENABLED="false"
+fi
+
+# Check for Postgres version incompatibility
+VOLUME_NAME="${PROJECT_NAME}_db-backup"
+if docker volume inspect "${VOLUME_NAME}" > /dev/null 2>&1; then
+  # Check PG_VERSION
+  PG_VERSION=$(docker run --rm -v "${VOLUME_NAME}:/data" busybox cat /data/PG_VERSION 2>/dev/null || echo "")
+  if [[ -n "$PG_VERSION" && "$PG_VERSION" -lt 16 ]]; then
+    echo -e "\033[0;31mERROR: Incompatible PostgreSQL version detected ($PG_VERSION) in volume '${VOLUME_NAME}'.\033[0m"
+    echo -e "\033[0;31mMarquez now requires PostgreSQL 16.\033[0m"
+    echo
+    echo "Please run the migration script to upgrade your database:"
+    echo "  1. ./docker/migrate-db.sh backup"
+    echo "  2. ./docker/up.sh"
+    echo "  3. ./docker/migrate-db.sh restore"
+    echo
+    echo "See docker/MIGRATION.md for details."
+    exit 1
+  fi
 fi
 
 # Run docker compose cmd with overrides

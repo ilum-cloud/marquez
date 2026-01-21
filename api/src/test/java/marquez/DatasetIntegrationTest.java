@@ -187,7 +187,9 @@ public class DatasetIntegrationTest extends BaseIntegrationTest {
           assertThat(datasetVersion.getVersion()).isNotNull();
           assertThat(datasetVersion.getDescription()).isEqualTo(DB_TABLE_META.getDescription());
         });
-    assertThat(versions.get(0).getFacets()).isEqualTo(expectedFacetsMap);
+    Map<String, Object> actualFacets = new java.util.HashMap<>(versions.get(0).getFacets());
+    actualFacets.remove("lineageStatistics");
+    assertThat(actualFacets).isEqualTo(expectedFacetsMap);
 
     final DatasetVersion initialDatasetVersion =
         client.getDatasetVersion(
@@ -205,7 +207,9 @@ public class DatasetIntegrationTest extends BaseIntegrationTest {
     assertThat(latestDatasetVersion.getCreatedByRun().get().getId())
         .isEqualTo(lineageEvent.getRun().getRunId());
     assertThat(latestDatasetVersion.hasFacets()).isTrue();
-    assertThat(latestDatasetVersion.getFacets()).isEqualTo(expectedFacetsMap);
+    Map<String, Object> latestFacets = new java.util.HashMap<>(latestDatasetVersion.getFacets());
+    latestFacets.remove("lineageStatistics");
+    assertThat(latestFacets).isEqualTo(expectedFacetsMap);
   }
 
   @Test

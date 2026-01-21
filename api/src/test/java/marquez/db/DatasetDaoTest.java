@@ -163,7 +163,7 @@ class DatasetDaoTest {
             marquez.service.models.Dataset::getFacets,
             InstanceOfAssertFactories.map(String.class, Object.class))
         .isNotEmpty()
-        .hasSize(7)
+        .hasSize(8)
         .containsKeys(
             "documentation",
             "schema",
@@ -322,7 +322,7 @@ class DatasetDaoTest {
             marquez.service.models.Dataset::getFacets,
             InstanceOfAssertFactories.map(String.class, Object.class))
         .isNotEmpty()
-        .hasSize(6)
+        .hasSize(7)
         .containsKeys(
             "documentation", "description", "schema", "dataSource", "writeFacet", "inputFacet")
         .containsEntry(
@@ -418,7 +418,7 @@ class DatasetDaoTest {
             marquez.service.models.Dataset::getFacets,
             InstanceOfAssertFactories.map(String.class, Object.class))
         .isNotEmpty()
-        .hasSize(6)
+        .hasSize(7)
         .containsKeys(
             "documentation", "description", "schema", "dataSource", "writeFacet", "inputFacet")
         .containsEntry(
@@ -446,7 +446,7 @@ class DatasetDaoTest {
             marquez.service.models.Dataset::getFacets,
             InstanceOfAssertFactories.map(String.class, Object.class))
         .isNotEmpty()
-        .hasSize(6)
+        .hasSize(7)
         .containsKeys("documentation", "description", "schema", "dataSource", "inputFacet")
         .containsEntry(
             "writeFacet",
@@ -517,7 +517,7 @@ class DatasetDaoTest {
             marquez.service.models.Dataset::getFacets,
             InstanceOfAssertFactories.map(String.class, Object.class))
         .isNotEmpty()
-        .hasSize(4)
+        .hasSize(5)
         .containsKeys("documentation", "description", "schema", "dataSource");
   }
 
@@ -599,7 +599,7 @@ class DatasetDaoTest {
             marquez.service.models.Dataset::getFacets,
             InstanceOfAssertFactories.map(String.class, Object.class))
         .isNotEmpty()
-        .hasSize(6)
+        .hasSize(7)
         .containsKeys(
             "documentation", "description", "schema", "dataSource", "writeFacet", "inputFacet")
         .containsEntry(
@@ -627,7 +627,7 @@ class DatasetDaoTest {
             marquez.service.models.Dataset::getFacets,
             InstanceOfAssertFactories.map(String.class, Object.class))
         .isNotEmpty()
-        .hasSize(5)
+        .hasSize(6)
         .containsKeys("documentation", "description", "schema", "dataSource", "writeFacet")
         .containsEntry(
             "writeFacet",
@@ -664,7 +664,7 @@ class DatasetDaoTest {
             marquez.service.models.Dataset::getFacets,
             InstanceOfAssertFactories.map(String.class, Object.class))
         .isNotEmpty()
-        .hasSize(5)
+        .hasSize(6)
         .containsKeys("documentation", "description", "schema", "dataSource", "writeFacet")
         .containsEntry(
             "writeFacet",
