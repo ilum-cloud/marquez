@@ -158,6 +158,8 @@ $ cp marquez.example.yml marquez.yml
 
 You will then need to set the following environment variables (we recommend adding them to your `.bashrc`): `POSTGRES_DB`, `POSTGRES_USER`, and `POSTGRES_PASSWORD`. The environment variables override the equivalent option in the configuration file.
 
+> **Note:** Marquez also supports `MARQUEZ_DB`, `MARQUEZ_DB_USER`, `MARQUEZ_DB_PASSWORD`, `MARQUEZ_DB_HOST`, and `MARQUEZ_DB_PORT` as alternatives.
+
 By default, Marquez uses the following ports:
 
 * TCP port `8080` is available for the HTTP API server.
