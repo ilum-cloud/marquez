@@ -72,7 +72,7 @@ search:
   host: marquez-opensearch
   port: 9200
   username: admin
-  password: admin
+  password: CHANGEMEPLEASE1@#a
 
 ### TRACING ###
 

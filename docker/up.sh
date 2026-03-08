@@ -8,9 +8,9 @@
 set -e
 
 # Version of Marquez
-readonly VERSION=0.53.2
+readonly VERSION=0.54.0
 # Build version of Marquez
-readonly BUILD_VERSION=0.53.2
+readonly BUILD_VERSION=0.54.0
 
 title() {
   echo -e "\033[1m${1}\033[0m"
@@ -53,6 +53,7 @@ usage() {
   echo "  -s, --seed            seed HTTP API server with metadata"
   echo "  -d, --detach          run in the background"
   echo "  --airflow             start airflow"
+  echo "  --java                use deprecated Java API instead of Rust"
   echo "  --no-web              don't start the web UI"
   echo "  --no-search           don't start search"
   echo "  --no-volumes          don't create volumes"
@@ -74,6 +75,7 @@ API_ADMIN_PORT=5001
 WEB_PORT=3000
 DB_PORT=5432
 SEARCH_PORT=9200
+JAVA="false"
 NO_WEB="false"
 NO_SEARCH="false"
 NO_VOLUMES="false"
@@ -119,6 +121,7 @@ while [ $# -gt 0 ]; do
        SEED='true'
        ;;
     -d|'--detach') DETACH='true' ;;
+    --java) JAVA='true' ;;
     --airflow) AIRFLOW='true' ;;
     --no-web) NO_WEB='true' ;;
     --no-search) NO_SEARCH='true' ;;
@@ -165,6 +168,11 @@ fi
 # Enable Airflow example
 if [[ "${AIRFLOW}" = "true" ]]; then
   compose_files+=" -f docker-compose.airflow.yml"
+fi
+
+# Use deprecated Java API instead of Rust (override build/image only)
+if [[ "${JAVA}" = "true" ]]; then
+  compose_files+=" -f docker-compose.java.yml"
 fi
 
 # Create docker volumes for Marquez

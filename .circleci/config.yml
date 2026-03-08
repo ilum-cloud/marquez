@@ -57,6 +57,17 @@ jobs:
       - store_artifacts:
           path: marquez.tar
 
+  build-image-api-java:
+    working_directory: ~/marquez
+    machine:
+      image: ubuntu-2004:2023.10.1
+    steps:
+      - checkout
+      - run: docker build --no-cache -f Dockerfile.java --tag "ilum/marquez:${CIRCLE_SHA1}-java" .
+      - run: docker save -o marquez-java.tar "ilum/marquez:${CIRCLE_SHA1}-java"
+      - store_artifacts:
+          path: marquez-java.tar
+
   build-image-web:
     working_directory: ~/marquez/web
     machine:

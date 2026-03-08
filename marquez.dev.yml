@@ -29,7 +29,7 @@ search:
   host: ${SEARCH_HOST:-opensearch}
   port: ${SEARCH_PORT:-9200}
   username: admin
-  password: admin
+  password: ${SEARCH_PASSWORD:-CHANGEMEPLEASE1@#a}
 
 tags:
   - name: PII

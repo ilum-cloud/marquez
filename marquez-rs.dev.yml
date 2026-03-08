@@ -1,0 +1,19 @@
+db:
+  host: localhost
+  port: 5432
+  name: marquez
+  user: marquez
+  password: marquez
+
+server:
+  host: "0.0.0.0"
+  port: 5000
+  admin_port: 5001
+
+migrate_on_startup: true
+
+tags:
+  - name: PII
+    description: Personally identifiable information
+  - name: SENSITIVE
+    description: Contains sensitive information

@@ -1,0 +1,12 @@
+[package]
+name = "marquez-tracing"
+version = "0.54.0"
+edition = "2021"
+
+[dependencies]
+sentry = { workspace = true }
+sentry-tower = { workspace = true }
+tower = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+serde = { workspace = true }

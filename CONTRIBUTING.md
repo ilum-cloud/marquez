@@ -21,32 +21,36 @@ Your pull request must be approved and merged by a [committer](COMMITTERS.md).
 To run the entire test suite:
 
 ```bash
-$ ./gradlew test
+$ cd api-rs && cargo test --workspace
 ```
 
-You can also run individual tests for a [submodule](https://github.com/MarquezProject/marquez#modules) using the `--tests` flag:
+You can also run tests by category:
 
 ```bash
-$ ./gradlew :api:test --tests marquez.api.OpenLineageResourceTest
-$ ./gradlew :api:test --tests marquez.service.OpenLineageServiceIntegrationTest
-$ ./gradlew :api:test --tests marquez.db.OpenLineageDaoTest
+$ cd api-rs && cargo test -p marquez-tests -- db_tests      # DAO / data access tests
+$ cd api-rs && cargo test -p marquez-tests -- api_tests      # HTTP integration tests
+$ cd api-rs && cargo test -p marquez-tests -- sql_parity_test  # SQL parity tests
 ```
 
-Or run tests by category:
+We use `cargo fmt` and `cargo clippy` for code formatting and linting. Make sure your code passes both before pushing any changes, otherwise CI will fail:
 
 ```bash
-$ ./gradlew :api:testUnit         # run only unit tests
-$ ./gradlew :api:testIntegration  # run only integration tests
-$ ./gradlew :api:testDataAccess   # run only data access tests
+$ cd api-rs && cargo fmt --all          # auto-format
+$ cd api-rs && cargo clippy --workspace -- -D warnings  # lint
 ```
 
-We use [spotless](https://github.com/diffplug/spotless) to format our code. This ensures `.java` files are formatted to comply with [Google Java Style](https://google.github.io/styleguide/javaguide.html). Make sure your code is formatted before pushing any changes, otherwise CI will fail:
+<details>
+<summary>Legacy Java Backend (deprecated)</summary>
 
-```
-$ ./gradlew spotlessApply
+```bash
+$ ./gradlew test                        # all tests
+$ ./gradlew :api:testUnit               # unit tests only
+$ ./gradlew :api:testIntegration        # integration tests only
+$ ./gradlew :api:testDataAccess         # data access tests only
+$ ./gradlew spotlessApply               # auto-format (Google Java Style)
 ```
 
-> **Note:** To make formatting code simple, we recommend installing a [plugin](https://github.com/google/google-java-format#intellij-android-studio-and-other-jetbrains-ides) for your favorite IDE. We also use [Lombok](https://projectlombok.org). Though not required, you might want to install the [plugin](https://projectlombok.org/setup/overview), as well.
+</details>
 
 # `.git/hooks`
 
@@ -64,33 +68,22 @@ $ pre-commit install
 
 # `.github/workflows`
 
-Each Pull Request executes a series of quality checks, mostly relying upon CircleCI for validation. However, there are
-certain validation checks that execute via GitHub Actions and can be run locally using the steps below.
+Each Pull Request executes a series of quality checks via [GitHub Actions](https://github.com/ilum-cloud/marquez/blob/main/.github/workflows/rust-ci.yml). The CI pipeline includes the following jobs:
 
-Install [act](https://github.com/nektos/act) and run the following command, which will evaluate the GitHub Actions
-checks that apply to each Pull Request. The first time you run _act_ you will be asked to choose a
-[runner](https://github.com/nektos/act#runners).
+1. **check** -- `cargo fmt --check`, `cargo clippy`, `cargo build`
+2. **test** -- `cargo test --workspace` against a PostgreSQL 16 service container
+3. **sql-catalog** -- SQL parity catalog generation (compares Java and Rust queries)
+4. **parity-tests** -- SQL parity and edge case parity tests
+5. **docker** -- Docker image build verification
 
-Alternatively, you can store your preferred runner within a local user profile named _.actrc_.
-
-```bash
-# .actrc file example (https://github.com/nektos/act#configuration)
--P ubuntu-latest=ghcr.io/catthehacker/ubuntu:act-latest
-```
-
-Once you have configured a runner, use _act_ to invoke GitHub Actions and evaluate the workflow.
+You can run these checks locally:
 
 ```bash
-act pull_request
+cd api-rs
+cargo fmt --all -- --check
+cargo clippy --workspace -- -D warnings
+cargo test --workspace
 ```
-
-You can also enable verbose logging and image caching via [act flags](https://github.com/nektos/act#flags).
-
-```bash
-act pull_request --reuse --verbose
-```
-
-> **Note:** Docker must be running in order to utilize _act_.
 
 # Troubleshooting
 
@@ -109,23 +102,15 @@ Execute the command below to manually clean up the _kind_ cluster and resolve th
 kind delete clusters chart-testing
 ```
 
-# Publish to Local Maven Repository
-
-Use [`publishToMavenLocal`](https://docs.gradle.org/current/userguide/publishing_maven.html#publishing_maven:tasks) to publish artifacts to your local maven repository:
-
-```
-$ ./gradlew publishToMavenLocal
-```
-
 # Submitting a [Pull Request](https://help.github.com/articles/about-pull-requests)
 
 1. [Fork](https://github.com/ilum-cloud/marquez/fork) and clone the repository
-2. Make sure all tests pass locally: `./gradlew :api:test`
+2. Make sure all tests pass locally: `cd api-rs && cargo test --workspace`
 3. Create a new [branch](#branching): `git checkout -b feature/my-cool-new-feature`
 4. Make a change on your cool new branch
 5. Write a test for your change
-6. Make sure `.java` files are formatted: `./gradlew spotlessJavaCheck`
-7. Make sure `.java` files contain a [copyright and license header](#copyright--license)
+6. Make sure formatting passes: `cd api-rs && cargo fmt --all -- --check`
+7. Make sure `.rs` files contain a [copyright and license header](#copyright--license)
 8. Make sure to [sign you work](#sign-your-work)
 9. Push the change to your fork and [submit a pull request](https://github.com/ilum-cloud/marquez/compare)
 10. Work with project maintainers to get your change reviewed and merged into the `main` branch
@@ -166,15 +151,14 @@ To ensure your pull request is accepted, follow these guidelines:
 
 # Dependencies
 
-We use [renovate](https://github.com/renovatebot/renovate) to manage dependencies for most of our project modules,
-with a couple of exceptions. Renovate automatically detects new dependency versions and opens pull
-requests to upgrade dependencies in accordance with the [configured rules](https://github.com/ilum-cloud/marquez/blob/main/renovate.json).
+Rust dependencies are managed via workspace-level `Cargo.toml` in `api-rs/Cargo.toml`. All crates in the workspace share dependency versions defined under `[workspace.dependencies]`.
+
+We use [renovate](https://github.com/renovatebot/renovate) to manage dependencies for non-Rust project modules (web, clients). Renovate automatically detects new dependency versions and opens pull requests to upgrade dependencies in accordance with the [configured rules](https://github.com/ilum-cloud/marquez/blob/main/renovate.json).
 
 The following dependencies are managed manually:
 
 * _Web code_ - it is challenging to programmatically validate web content
 * _Spark versions_ - the internal query plans parsed by the Spark OpenLineage integration are not stable across Spark versions
-* _Gradle_ - this tool orchestrates the entire build pipeline and was excluded to ensure stability
 
 # Sign Your Work
 
@@ -212,7 +196,7 @@ Then browse to: http://localhost:8080
 
 # `COPYRIGHT` / `LICENSE`
 
-We use [SPDX](https://spdx.dev) for copyright and license information. The following license header **must** be included in all `java,` `bash`, and `py` source files:
+We use [SPDX](https://spdx.dev) for copyright and license information. The following license header **must** be included in all `java`, `bash`, `py`, and `rs` source files:
 
 `java`
 
@@ -239,6 +223,13 @@ We use [SPDX](https://spdx.dev) for copyright and license information. The follo
 # SPDX-License-Identifier: Apache-2.0
 ```
 
+`rs`
+
+```
+// Copyright 2024-2026 contributors to the Marquez project
+// SPDX-License-Identifier: Apache-2.0
+```
+
 # Resources
 
 * [How to Contribute to Open Source](https://opensource.guide/how-to-contribute)
@@ -250,4 +241,4 @@ We use [SPDX](https://spdx.dev) for copyright and license information. The follo
 
 ----
 SPDX-License-Identifier: Apache-2.0
-Copyright 2018-2023 contributors to the Marquez project.
+Copyright 2018-2025 contributors to the Marquez project.

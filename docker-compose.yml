@@ -1,6 +1,9 @@
 version: "3.7"
 services:
   api:
+    build:
+      context: .
+      dockerfile: Dockerfile
     image: "ilum/marquez:${TAG}"
     # platform: linux/amd64
     container_name: marquez-api
@@ -18,7 +21,7 @@ services:
       - "db:postgres"
     depends_on:
       - db
-    entrypoint: ["/opt/marquez/wait-for-it.sh", "db:${POSTGRES_PORT}", "--", "./entrypoint.sh"]
+    entrypoint: ["./wait-for-it.sh", "db:${POSTGRES_PORT}", "--timeout=60", "--", "./entrypoint.sh"]
 
   db:
     image: postgres:16

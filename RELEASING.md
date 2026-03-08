@@ -12,8 +12,8 @@
    > **Tip:** Use `--help` to see script usage
 
 5. Push the tag with the command supplied by the script.
-6. Visit [CI](https://app.circleci.com/pipelines/github/MarquezProject/marquez?branch=main) to see the progress of the release! :rocket:
-7. Visit [sonatype](https://oss.sonatype.org) to promote _java_ artifacts
+6. Visit [CI](https://github.com/ilum-cloud/marquez/actions) to see the progress of the release! :rocket:
+7. Docker image `ilum/marquez` is built automatically on tagged releases.
 8. Draft a [new release](https://github.com/MarquezProject/marquez/releases/new) using the release notes for `X.Y.Z` in **step 1** as the release description:
 
    ![](./docs/assets/images/new-release.png)
@@ -38,4 +38,4 @@ Once a release is authorized, it will be initiated within two business days. Rel
 
 ----
 SPDX-License-Identifier: Apache-2.0
-Copyright 2018-2023 contributors to the Marquez project.
+Copyright 2018-2025 contributors to the Marquez project.

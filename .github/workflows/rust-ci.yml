@@ -1,0 +1,170 @@
+name: Rust CI
+
+on:
+  push:
+    branches: [rust]
+    paths:
+      - 'api-rs/**'
+      - 'Dockerfile'
+      - '.github/workflows/rust-ci.yml'
+  pull_request:
+    branches: [rust]
+    paths:
+      - 'api-rs/**'
+      - 'Dockerfile'
+      - '.github/workflows/rust-ci.yml'
+
+env:
+  CARGO_TERM_COLOR: always
+  RUSTFLAGS: -D warnings
+
+jobs:
+  check:
+    name: Check & Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: api-rs
+      - name: Check formatting
+        working-directory: api-rs
+        run: cargo fmt --all -- --check
+      - name: Clippy
+        working-directory: api-rs
+        run: cargo clippy --workspace -- -D warnings
+      - name: Build
+        working-directory: api-rs
+        run: cargo build --workspace
+
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: password
+          POSTGRES_DB: marquez
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: api-rs
+      - name: Copy migrations
+        run: cp -r api/src/main/resources/marquez/db/migration/ api-rs/migrations
+      - name: Run tests
+        working-directory: api-rs
+        run: cargo test --workspace
+        env:
+          TEST_POSTGRES_HOST: localhost
+          TEST_POSTGRES_PORT: 5432
+          TEST_POSTGRES_USER: postgres
+          TEST_POSTGRES_PASSWORD: password
+          TEST_POSTGRES_DB: marquez
+
+  sql-catalog:
+    name: SQL Parity Catalog
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Generate SQL catalog
+        run: python scripts/compare_sql.py --output scripts/sql_catalog.csv
+      - name: Check for unmatched queries
+        run: |
+          if grep -c 'GAP' scripts/sql_catalog.csv | grep -qv '^0$'; then
+            echo "WARNING: Java queries without Rust equivalents found:"
+            grep 'GAP' scripts/sql_catalog.csv | head -20
+            echo ""
+            echo "See scripts/sql_catalog.csv for full details"
+          fi
+          # Report summary
+          echo "=== SQL Catalog Summary ==="
+          echo "MATCHED:       $(grep -c 'MATCHED' scripts/sql_catalog.csv || echo 0)"
+          echo "SEMANTIC_DIFF: $(grep -c 'SEMANTIC_DIFF' scripts/sql_catalog.csv || echo 0)"
+          echo "GAP:           $(grep -c 'GAP' scripts/sql_catalog.csv || echo 0)"
+          echo "RUST_ONLY:     $(grep -c 'RUST_ONLY' scripts/sql_catalog.csv || echo 0)"
+      - name: Upload SQL catalog
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: sql-catalog
+          path: scripts/sql_catalog.csv
+
+  parity-tests:
+    name: SQL Parity Tests
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: password
+          POSTGRES_DB: marquez
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: api-rs
+      - name: Copy migrations
+        run: cp -r api/src/main/resources/marquez/db/migration/ api-rs/migrations
+      - name: Run parity tests
+        working-directory: api-rs
+        run: cargo test --package marquez-tests -- sql_parity_test
+        env:
+          TEST_POSTGRES_HOST: localhost
+          TEST_POSTGRES_PORT: 5432
+          TEST_POSTGRES_USER: postgres
+          TEST_POSTGRES_PASSWORD: password
+          TEST_POSTGRES_DB: marquez
+      - name: Run edge case tests
+        working-directory: api-rs
+        run: cargo test --package marquez-tests -- edge_case_parity_test
+        env:
+          TEST_POSTGRES_HOST: localhost
+          TEST_POSTGRES_PORT: 5432
+          TEST_POSTGRES_USER: postgres
+          TEST_POSTGRES_PASSWORD: password
+          TEST_POSTGRES_DB: marquez
+      - name: Parity coverage report
+        if: always()
+        run: |
+          echo "=== Parity Test Coverage ==="
+          echo "DAO areas with parity tests:"
+          grep -l 'parity_' api-rs/tests/src/db_tests/sql_parity_test.rs | \
+            xargs grep -o 'parity_[a-z_]*' | sort -u || true
+          echo ""
+          echo "Edge case tests:"
+          grep -l 'edge_case_' api-rs/tests/src/db_tests/edge_case_parity_test.rs | \
+            xargs grep -o 'edge_case_[a-z_]*' | sort -u || true
+
+  docker:
+    name: Docker Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build Docker image
+        run: docker build -t marquez:ci .

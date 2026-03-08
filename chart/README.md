@@ -37,7 +37,7 @@ The command removes all the Kubernetes components associated with the chart and 
 | `marquez.replicaCount`        | Number of desired replicas                           | `1`                                    |
 | `marquez.image.registry`      | Image registry                                       | `docker.io`                            |
 | `marquez.image.repository`    | Image repository                                     | `ilum/marquez`                         |
-| `marquez.image.tag`           | Image tag                                            | `0.53.1`                               |
+| `marquez.image.tag`           | Image tag                                            | `0.54.0`                               |
 | `marquez.image.pullPolicy`    | Image pull policy                                    | `IfNotPresent`                         |
 | `marquez.existingSecretName`  | Name of existing secret for DB credentials           | `""`                                   |
 | `marquez.extraContainers`     | Sidecar containers to add to the Marquez pod         | `[]`                                   |
@@ -50,7 +50,7 @@ The command removes all the Kubernetes components associated with the chart and 
 | `marquez.db.user`             | PostgreSQL user                                      | `ilum`                                 |
 | `marquez.db.password`         | PostgreSQL password                                  | `CHANGEMEPLEASE`                       |
 | `marquez.dbRetention.enabled` | Enable DB retention policy                           | `false`                                |
-| `marquez.migrateOnStartup`    | Execute Flyway migration                             | `true`                                 |
+| `marquez.migrateOnStartup`    | Execute database migrations on startup               | `true`                                 |
 | `marquez.resources`           | Resource limits/requests                             | `{}`                                   |
 
 ### Marquez service parameters
@@ -70,7 +70,7 @@ The command removes all the Kubernetes components associated with the chart and 
 | `web.enabled`            | Enables creation of Web UI | `true`             |
 | `web.image.registry`     | Image registry             | `docker.io`        |
 | `web.image.repository`   | Image repository           | `ilum/marquez-web` |
-| `web.image.tag`          | Image tag                  | `0.53.1`           |
+| `web.image.tag`          | Image tag                  | `0.54.0`           |
 | `web.podSecurityContext` | Pod security context       | `{}`               |
 | `web.securityContext`    | Container security context | `{}`               |
 | `web.pdb.create`         | Create PodDisruptionBudget | `false`            |

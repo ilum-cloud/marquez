@@ -13,12 +13,12 @@ The specific security and analysis methodologies that we employ include but are 
 - Use of secure protocols for network communication (through the use of HTTPS)
 - Up-to-date support for TLS/SSL (through the use of [OpenSSL](https://www.openssl.org/))
 - Performance of TLS certificate verification by default before sending HTTP headers with private information (through the use of OpenSSL and HTTPS)
-- Distribution of the software via cryptographically signed releases (on the [PyPI](https://pypi.org/) and [Maven](https://mvnrepository.com/) package repositories)
+- Distribution of the software via cryptographically signed releases (on [PyPI](https://pypi.org/) and [Docker Hub](https://hub.docker.com/r/ilum/marquez))
 - Use of [GitHub](https://github.com/) Issues for vulnerability reporting and tracking
 
 ## Analysis
 
-- Use of [PMD](https://pmd.github.io/) and [Spotless](https://github.com/diffplug/spotless) for Java code linting on pull requests and builds
+- Use of [Clippy](https://github.com/rust-lang/rust-clippy) and [rustfmt](https://github.com/rust-lang/rustfmt) for Rust code linting and formatting on pull requests and builds
 - Use of [Flake8](https://flake8.pycqa.org/en/latest/) and [Pytest](https://docs.pytest.org/en/7.2.x/) for Python code linting on pull requests and builds
 - Use of GitHub Issues for bug reporting and tracking
 
@@ -30,4 +30,4 @@ For more information about our approach to quality and security, feel free to re
 
 ----
 SPDX-License-Identifier: Apache-2.0
-Copyright 2018-2023 contributors to the Marquez project.
+Copyright 2018-2026 contributors to the Marquez project.
