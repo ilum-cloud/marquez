@@ -1,0 +1,48 @@
+# Marquez Rust API Configuration
+# ================================
+#
+# All fields can be overridden via environment variables using the MARQUEZ_ prefix
+# and __ (double underscore) for nesting. For example:
+#   MARQUEZ_DB__HOST=myhost
+#   MARQUEZ_DB__PORT=5433
+#   MARQUEZ_SERVER__PORT=9000
+#
+# For Docker, the entrypoint also supports legacy POSTGRES_* and MARQUEZ_DB_* vars.
+
+db:
+  host: ${POSTGRES_HOST:-localhost}
+  port: 5432                       # default: 5432
+  name: ${POSTGRES_DB:-marquez}
+  user: ${POSTGRES_USER:-marquez}
+  password: ${POSTGRES_PASSWORD:-marquez}
+  max_pool_size: 10                # default: 10
+
+server:
+  host: "0.0.0.0"
+  port: 5000                       # default: 8080
+  admin_port: 5001                 # default: 8081
+
+migrate_on_startup: true           # default: true — run Flyway migrations on startup
+
+tags: []
+# tags:
+#   - name: PII
+#     description: Personally identifiable information
+#   - name: SENSITIVE
+#     description: Contains sensitive information
+
+# db_retention:                    # optional, disabled by default
+#   frequency_mins: 15             # default: 15
+#   retention_days: 7              # default: 7
+#   number_of_rows_per_batch: 1000 # default: 1000
+
+# search:                          # optional OpenSearch integration
+#   enabled: false
+#   scheme: http
+#   host: opensearch
+#   port: 9200
+#   username: admin
+#   password: CHANGEMEPLEASE1@#a
+
+# sentry:                          # optional Sentry error tracking
+#   dsn: ""

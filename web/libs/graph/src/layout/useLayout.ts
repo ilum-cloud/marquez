@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 
-import ELK, { ElkNode } from 'elkjs'
+import ELK, { ElkNode } from 'elkjs/lib/elk-api'
 import isEqual from 'lodash/isEqual'
 
 import { useCallbackRef } from '../utils/hooks'
@@ -165,6 +165,7 @@ export const useLayout = <K, D>({
   useEffect(() => {
     const elk = new ELK({
       workerUrl: webWorkerUrl,
+      workerFactory: (url?: string) => new Worker(url!),
     })
 
     elk

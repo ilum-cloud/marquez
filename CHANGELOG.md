@@ -1,6 +1,12 @@
 # Changelog
 
-## [Unreleased](https://github.com/ilum-cloud/marquez/compare/0.53.0...HEAD)
+## [Unreleased](https://github.com/ilum-cloud/marquez/compare/0.54.0...HEAD)
+
+## [0.54.0](https://github.com/ilum-cloud/marquez/compare/0.53.0...0.54.0) - 2026-03-02
+
+### Changed
+
+* API: **Rewritten in Rust** — the API backend has been fully rewritten using Axum, SQLx, and tokio for improved performance and lower resource usage. The Java Dropwizard backend (`api/`) is now deprecated. [@ilum-cloud](https://github.com/ilum-cloud)
 
 ## [0.53.0](https://github.com/ilum-cloud/marquez/compare/0.50.0...0.53.0) - 2025-08-30
 

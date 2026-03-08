@@ -27,4 +27,11 @@ sed -e "s/{{RUN_START_TIME}}/$NOW/" \
     -e "s/{{RUN_END_TIME_AFTER_10_MINUTES}}/$RUN_END_TIME_AFTER_10_MINUTES/" \
     metadata.template.json > metadata.json
 
-java -jar marquez-api-*.jar seed --url "${MARQUEZ_URL:-http://localhost:5000}" --metadata metadata.json
+MARQUEZ_URL="${MARQUEZ_URL:-http://localhost:5000}"
+TOTAL=$(jq length metadata.json)
+echo "Seeding ${TOTAL} OpenLineage events to ${MARQUEZ_URL}..."
+for i in $(seq 0 $((TOTAL - 1))); do
+  jq ".[$i]" metadata.json | curl -s -X POST "${MARQUEZ_URL}/api/v1/lineage" \
+    -H 'Content-Type: application/json' -d @- > /dev/null
+done
+echo "Successfully seeded ${TOTAL} events."

@@ -70,7 +70,7 @@ services:
         target: /bitnami/python/requirements.txt
 
   marquez:
-    image: marquezproject/marquez:latest
+    image: ilum/marquez:latest
     ports:
       - "5000:5000"
       - "5001:5001"

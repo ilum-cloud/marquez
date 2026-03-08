@@ -1,0 +1,33 @@
+[package]
+name = "marquez-api"
+version = "0.54.0"
+edition = "2021"
+
+[dependencies]
+axum = { workspace = true }
+tokio = { workspace = true }
+tower = { workspace = true }
+tower-http = { workspace = true }
+sqlx = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+uuid = { workspace = true }
+chrono = { workspace = true }
+url = { workspace = true }
+thiserror = { workspace = true }
+anyhow = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+figment = { workspace = true }
+clap = { workspace = true }
+tokio-util = { workspace = true }
+marquez-search = { path = "../marquez-search" }
+marquez-graphql = { path = "../marquez-graphql" }
+marquez-tracing = { path = "../marquez-tracing" }
+sentry = { workspace = true }
+sentry-tower = { workspace = true }
+percent-encoding = { workspace = true }
+sha2 = { workspace = true }
+md5 = { workspace = true }
+serde_urlencoded = "0.7"
+form_urlencoded = "1"

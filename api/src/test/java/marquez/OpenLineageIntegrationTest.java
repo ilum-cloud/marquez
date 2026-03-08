@@ -1502,6 +1502,125 @@ public class OpenLineageIntegrationTest extends BaseIntegrationTest {
     assertThat(client.listLineageEvents()).hasSize(0);
   }
 
+  @Test
+  public void testJobEventLineageGraph() throws Exception {
+    // Model a chain of view dependencies using only JobEvents (no runs):
+    //   raw_table -> view_a -> view_b -> view_c
+    final String namespace = "views-namespace";
+    final String schemaURL =
+        "https://openlineage.io/spec/2-0-0/OpenLineage.json#/definitions/JobEvent";
+    final String producer = "https://github.com/OpenLineage/OpenLineage/blob/v1-0-0/client";
+
+    // JobEvent: view_a reads raw_table, produces view_a_dataset
+    String viewAEvent =
+        String.format(
+            """
+        {
+          "eventTime": "2024-01-01T10:00:00.000Z",
+          "job": { "namespace": "%s", "name": "view_a" },
+          "inputs": [{ "namespace": "%s", "name": "raw_table" }],
+          "outputs": [{ "namespace": "%s", "name": "view_a_dataset" }],
+          "producer": "%s",
+          "schemaURL": "%s"
+        }
+        """,
+            namespace, namespace, namespace, producer, schemaURL);
+
+    // JobEvent: view_b reads view_a_dataset, produces view_b_dataset
+    String viewBEvent =
+        String.format(
+            """
+        {
+          "eventTime": "2024-01-01T10:01:00.000Z",
+          "job": { "namespace": "%s", "name": "view_b" },
+          "inputs": [{ "namespace": "%s", "name": "view_a_dataset" }],
+          "outputs": [{ "namespace": "%s", "name": "view_b_dataset" }],
+          "producer": "%s",
+          "schemaURL": "%s"
+        }
+        """,
+            namespace, namespace, namespace, producer, schemaURL);
+
+    // JobEvent: view_c reads view_b_dataset, produces view_c_dataset
+    String viewCEvent =
+        String.format(
+            """
+        {
+          "eventTime": "2024-01-01T10:02:00.000Z",
+          "job": { "namespace": "%s", "name": "view_c" },
+          "inputs": [{ "namespace": "%s", "name": "view_b_dataset" }],
+          "outputs": [{ "namespace": "%s", "name": "view_c_dataset" }],
+          "producer": "%s",
+          "schemaURL": "%s"
+        }
+        """,
+            namespace, namespace, namespace, producer, schemaURL);
+
+    // (1) Send all three JobEvents
+    for (String event : List.of(viewAEvent, viewBEvent, viewCEvent)) {
+      CompletableFuture<Integer> resp =
+          this.sendLineage(event)
+              .thenApply(HttpResponse::statusCode)
+              .whenComplete(
+                  (val, error) -> {
+                    if (error != null) {
+                      Assertions.fail("Could not complete request");
+                    }
+                  });
+      assertThat(resp.get(5, TimeUnit.SECONDS)).isEqualTo(201);
+    }
+
+    // (2) Query lineage from view_c job node - should show the full chain
+    String jobNodeId = "job:" + namespace + ":view_c";
+    CompletableFuture<HttpResponse<String>> lineageResp = this.fetchLineage(jobNodeId);
+    HttpResponse<String> response = lineageResp.get(5, TimeUnit.SECONDS);
+    assertThat(response.statusCode()).isEqualTo(200);
+
+    // Parse the lineage response
+    JsonNode lineageJson = new ObjectMapper().readTree(response.body());
+    JsonNode graphNodes = lineageJson.path("graph");
+    assertThat(graphNodes.isArray()).isTrue();
+
+    // Collect node IDs from the graph
+    java.util.Set<String> nodeIds = new java.util.HashSet<>();
+    for (JsonNode node : graphNodes) {
+      nodeIds.add(node.path("id").asText());
+    }
+
+    // Verify all 3 jobs and their connecting datasets are in the lineage graph
+    assertThat(nodeIds).contains("job:" + namespace + ":view_a");
+    assertThat(nodeIds).contains("job:" + namespace + ":view_b");
+    assertThat(nodeIds).contains("job:" + namespace + ":view_c");
+    assertThat(nodeIds).contains("dataset:" + namespace + ":view_a_dataset");
+    assertThat(nodeIds).contains("dataset:" + namespace + ":view_b_dataset");
+
+    // (3) Also query lineage from a dataset node - should find the connected chain
+    String datasetNodeId = "dataset:" + namespace + ":view_b_dataset";
+    CompletableFuture<HttpResponse<String>> dsLineageResp = this.fetchLineage(datasetNodeId);
+    HttpResponse<String> dsResponse = dsLineageResp.get(5, TimeUnit.SECONDS);
+    assertThat(dsResponse.statusCode()).isEqualTo(200);
+
+    JsonNode dsLineageJson = new ObjectMapper().readTree(dsResponse.body());
+    JsonNode dsGraphNodes = dsLineageJson.path("graph");
+    assertThat(dsGraphNodes.isArray()).isTrue();
+
+    // The dataset view_b_dataset connects view_b (producer) and view_c (consumer)
+    java.util.Set<String> dsNodeIds = new java.util.HashSet<>();
+    for (JsonNode node : dsGraphNodes) {
+      dsNodeIds.add(node.path("id").asText());
+    }
+    assertThat(dsNodeIds).contains("job:" + namespace + ":view_b");
+    assertThat(dsNodeIds).contains("job:" + namespace + ":view_c");
+    assertThat(dsNodeIds).contains("dataset:" + namespace + ":view_b_dataset");
+
+    // (4) Verify no runs were created - this is pure static lineage
+    Job viewA = client.getJob(namespace, "view_a");
+    assertThat(viewA.getLatestRun()).isNotPresent();
+
+    Job viewC = client.getJob(namespace, "view_c");
+    assertThat(viewC.getLatestRun()).isNotPresent();
+  }
+
   private void validateDatasetFacets(JsonNode json) {
     final String namespace = json.path("namespace").asText();
     final String output = json.path("name").asText();

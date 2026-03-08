@@ -1,6 +1,6 @@
 https://github.com/user-attachments/assets/db70aa84-326e-468a-acd6-832d60c93651
 
-**[Ilum](https://ilum.cloud/) fork.** This is an Ilum-maintained fork of Marquez created while upstream development slowed. We used it to ship critical fixes and additive features without breaking compatibility. From **0.52.x**, we’re aligning with upstream and contributing improvements back. Learn more in our short write-up: [Ilum × Marquez — Project Description & Rationale](ILUMxMARQUEZ.md).
+**[Ilum](https://ilum.cloud/) fork.** This is an Ilum-maintained fork of Marquez created while upstream development slowed. We used it to ship critical fixes and additive features without breaking compatibility. From **0.52.x**, we’re aligning with upstream and contributing improvements back. Starting with **0.54.x**, the API backend has been rewritten in Rust for improved performance and lower resource usage. Learn more in our short write-up: [Ilum × Marquez — Project Description & Rationale](ILUMxMARQUEZ.md).
 
 <div align="center">
   <img src="./docs/assets/images/marquez-logo.png" width="500px" />
@@ -87,6 +87,8 @@ The Marquez [HTTP API](https://marquezproject.github.io/marquez/openapi.html) li
 
 To explore metadata via graphql, browse to [http://localhost:5000/graphql-playground](http://localhost:5000/graphql-playground). The graphql endpoint is currently in _beta_ and is located at [http://localhost:5000/api/v1-beta/graphql](http://localhost:5000/api/v1-beta/graphql).
 
+> **Note:** GraphQL is not yet available in the Rust backend. For GraphQL access, use the legacy Java backend.
+
 ## Documentation
 
 We invite everyone to help us improve and keep documentation up to date. Documentation is maintained in this repository and can be found under [`docs/`](https://github.com/MarquezProject/marquez/tree/main/docs).
@@ -100,7 +102,8 @@ Versions of Marquez are compatible with OpenLineage unless noted otherwise. We e
 | **Marquez**                                                                                      | **OpenLineage**                                               | **Status**    |
 |--------------------------------------------------------------------------------------------------|---------------------------------------------------------------|---------------|
 | [`UNRELEASED`](https://github.com/ilum-cloud/marquez/blob/main/CHANGELOG.md#unreleased)          | [`2-0-2`](https://openlineage.io/spec/2-0-2/OpenLineage.json) | `CURRENT`     |
-| [`0.53.0`](https://github.com/ilum-cloud/marquez/blob/main/CHANGELOG.md#0530---2025-08-30)       | [`2-0-2`](https://openlineage.io/spec/2-0-2/OpenLineage.json) | `RECOMMENDED` |
+| [`0.54.0`](https://github.com/ilum-cloud/marquez/blob/main/CHANGELOG.md#0540---2026-03-02)       | [`2-0-2`](https://openlineage.io/spec/2-0-2/OpenLineage.json) | `RECOMMENDED` |
+| [`0.53.0`](https://github.com/ilum-cloud/marquez/blob/main/CHANGELOG.md#0530---2025-08-30)       | [`2-0-2`](https://openlineage.io/spec/2-0-2/OpenLineage.json) | `MAINTENANCE` |
 | [`0.50.0`](https://github.com/MarquezProject/marquez/blob/main/CHANGELOG.md#0500---2024-10-23)   | [`2-0-2`](https://openlineage.io/spec/2-0-2/OpenLineage.json) | `DEPRECATED`  |
 | [`0.49.0`](https://github.com/MarquezProject/marquez/blob/0.49.0/CHANGELOG.md#0490---2024-08-07) | [`2-0-2`](https://openlineage.io/spec/2-0-2/OpenLineage.json) | `DEPRECATED`  |
 
@@ -112,29 +115,32 @@ We currently maintain three categories of compatibility: `CURRENT`, `RECOMMENDED
 
 Marquez uses a _multi_-project structure and contains the following modules:
 
-* [`api`](https://github.com/MarquezProject/marquez/tree/main/api): core API used to collect metadata
-* [`web`](https://github.com/MarquezProject/marquez/tree/main/web): web UI used to view metadata
-* [`clients`](https://github.com/MarquezProject/marquez/tree/main/clients): clients that implement the HTTP [API](https://marquezproject.github.io/marquez/openapi.html)
-* [`chart`](https://github.com/MarquezProject/marquez/tree/main/chart): helm chart
+* [`api-rs`](https://github.com/ilum-cloud/marquez/tree/main/api-rs): core API in Rust (Axum/SQLx/tokio), replaces `api/`
+* [`api`](https://github.com/ilum-cloud/marquez/tree/main/api): legacy Java API (Dropwizard), deprecated
+* [`web`](https://github.com/ilum-cloud/marquez/tree/main/web): web UI used to view metadata
+* [`clients`](https://github.com/ilum-cloud/marquez/tree/main/clients): clients that implement the HTTP [API](https://marquezproject.github.io/marquez/openapi.html)
+* [`chart`](https://github.com/ilum-cloud/marquez/tree/main/chart): helm chart
 
 > **Note:** The `integrations` module was removed in [`0.21.0`](https://github.com/MarquezProject/marquez/blob/main/CHANGELOG.md#removed), so please use an OpenLineage [integration](https://openlineage.io/integration) to collect lineage events easily.
 
 ## Requirements
 
-* [Java 17](https://adoptium.net)
-* [PostgreSQL 14](https://www.postgresql.org/download)
+* [Rust stable](https://www.rust-lang.org/tools/install) (1.83+)
+* [PostgreSQL 16](https://www.postgresql.org/download)
 
-> **Note:** To connect to your running PostgreSQL instance, you will need the standard [`psql`](https://www.postgresql.org/docs/9.6/app-psql.html) tool.
+> **Note:** Docker users don't need a local Rust toolchain. To connect to your running PostgreSQL instance, you will need the standard [`psql`](https://www.postgresql.org/docs/9.6/app-psql.html) tool.
 
 ## Building
 
 To build the entire project run:
 
 ```bash
-./gradlew build
+cd api-rs
+cargo build --workspace            # debug build
+cargo build --workspace --release  # release build
 ```
 
-The executable can be found under `api/build/libs/`
+The executable can be found at `api-rs/target/release/marquez-api`
 
 ## Configuration
 
@@ -150,31 +156,72 @@ $ createdb marquez
 
 ### Step 2: Create `marquez.yml`
 
-With your database created, you can now copy [`marquez.example.yml`](https://github.com/MarquezProject/marquez/blob/main/marquez.example.yml):
+With your database created, you can now copy [`marquez-rs.example.yml`](https://github.com/ilum-cloud/marquez/blob/main/marquez-rs.example.yml):
 
 ```bash
-$ cp marquez.example.yml marquez.yml
+$ cp marquez-rs.example.yml marquez.yml
 ```
 
-You will then need to set the following environment variables (we recommend adding them to your `.bashrc`): `POSTGRES_DB`, `POSTGRES_USER`, and `POSTGRES_PASSWORD`. The environment variables override the equivalent option in the configuration file.
+Configuration uses [Figment](https://docs.rs/figment) with the `MARQUEZ_` prefix and `__` (double underscore) for nesting. The following environment variables override config values:
 
-> **Note:** Marquez also supports `MARQUEZ_DB`, `MARQUEZ_DB_USER`, `MARQUEZ_DB_PASSWORD`, `MARQUEZ_DB_HOST`, and `MARQUEZ_DB_PORT` as alternatives.
+* `MARQUEZ_DB__HOST`, `MARQUEZ_DB__PORT`, `MARQUEZ_DB__NAME`, `MARQUEZ_DB__USER`, `MARQUEZ_DB__PASSWORD`
+* `MARQUEZ_SERVER__PORT`, `MARQUEZ_SERVER__ADMIN_PORT`
+
+> **Note:** The Docker entrypoint also supports legacy `POSTGRES_*` and `MARQUEZ_DB_*` environment variable conventions.
 
 By default, Marquez uses the following ports:
 
 * TCP port `8080` is available for the HTTP API server.
 * TCP port `8081` is available for the admin interface.
 
+With the dev config (`marquez-rs.dev.yml`), ports are `5000` (API) and `5001` (admin).
+
 > **Note:** All of the configuration settings in `marquez.yml` can be specified either in the configuration file or in an environment variable.
 
-## Running the [HTTP API](https://github.com/MarquezProject/marquez/blob/main/src/main/java/marquez/MarquezApp.java) Server
+## Running the HTTP API Server
+
+```bash
+cd api-rs
+cargo run --bin marquez-api -- serve --config ../marquez-rs.dev.yml
+```
+
+CLI subcommands: `serve` (default), `db-migrate`, `db-retention`.
+
+Marquez listens on port `8080` for all API calls and port `8081` for the admin interface (or `5000`/`5001` with the dev config). To verify the HTTP API server is running and listening on `localhost`, browse to the admin port. We encourage you to familiarize yourself with the [data model](https://marquezproject.github.io/marquez/#data-model) and [APIs](https://marquezproject.github.io/marquez/openapi.html) of Marquez. To run the web UI, please follow the steps outlined [here](https://github.com/MarquezProject/marquez/tree/main/web#development).
+
+> **Note:** By default, the HTTP API does not require any form of authentication or authorization.
+
+<details>
+<summary>Legacy Java Backend (deprecated)</summary>
+
+### Requirements
+
+* [Java 17](https://adoptium.net)
+* [PostgreSQL 14](https://www.postgresql.org/download)
+
+### Building
+
+```bash
+./gradlew build
+```
+
+The executable can be found under `api/build/libs/`
+
+### Configuration
+
+```bash
+$ cp marquez.example.yml marquez.yml
+```
+
+Environment variables: `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD`, `MARQUEZ_DB_HOST`, `MARQUEZ_DB_PORT`.
+
+### Running
 
 ```bash
 $ ./gradlew :api:runShadow
 ```
-Marquez listens on port `8080` for all API calls and port `8081` for the admin interface. To verify the HTTP API server is running and listening on `localhost`, browse to [http://localhost:8081](http://localhost:8081). We encourage you to familiarize yourself with the [data model](https://marquezproject.github.io/marquez/#data-model) and [APIs](https://marquezproject.github.io/marquez/openapi.html) of Marquez. To run the web UI, please follow the steps outlined [here](https://github.com/MarquezProject/marquez/tree/main/web#development).
 
-> **Note:** By default, the HTTP API does not require any form of authentication or authorization.
+</details>
 
 ## Related Projects
 
@@ -196,4 +243,4 @@ If you discover a vulnerability in the project, please open an issue and attach 
 
 ----
 SPDX-License-Identifier: Apache-2.0
-Copyright 2018-2024 contributors to the Marquez project.
+Copyright 2018-2025 contributors to the Marquez project.

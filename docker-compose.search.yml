@@ -4,10 +4,12 @@ services:
     depends_on:
       - db
       - opensearch
-    entrypoint: ["/opt/marquez/wait-for-it.sh", "db:${POSTGRES_PORT}", "--", "/opt/marquez/wait-for-it.sh", "opensearch:${SEARCH_PORT}", "--", "./entrypoint.sh"]
+    environment:
+      - SEARCH_PASSWORD=CHANGEMEPLEASE1@#a
+    entrypoint: ["./wait-for-it.sh", "db:${POSTGRES_PORT}", "--timeout=60", "--", "./wait-for-it.sh", "opensearch:${SEARCH_PORT}", "--timeout=60", "--", "./entrypoint.sh"]
 
   opensearch:
-    image: opensearchproject/opensearch:2.5.0
+    image: opensearchproject/opensearch:2.19.4
     container_name: marquez-search
     hostname: opensearch
     ulimits:
@@ -25,7 +27,8 @@ services:
       - bootstrap.memory_lock=true
       - plugins.security.ssl.http.enabled=false
       - "OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m"
-      - OPENSEARCH_PASSWORD=admin
+      - OPENSEARCH_PASSWORD=CHANGEMEPLEASE1@#a
+      - OPENSEARCH_INITIAL_ADMIN_PASSWORD=CHANGEMEPLEASE1@#a
     volumes:
       - opensearch-data:/usr/share/opensearch/data
     cap_add:

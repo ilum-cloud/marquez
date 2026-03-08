@@ -29,6 +29,7 @@
 
 * **Drop‑in compatibility:** Same core API/schemas as upstream Marquez. We treat compatibility as a non‑negotiable.
 * **Non‑breaking improvements:** Stability fixes and additive features (e.g., a Search API). Anything behavior‑changing stays out until it’s discussed upstream.
+* **Rust rewrite:** The API backend has been rewritten in Rust (`api-rs/`) using Axum, SQLx, and tokio. The Java backend (`api/`) is retained as legacy.
 * **Ilum UI (separate):** We do **not** use `marquez-web`. We run our own web UI internally; we plan to open‑source it as a separate project.
 
 ## Roadmap & upstreaming plan
@@ -38,6 +39,7 @@ Starting with **Marquez 0.52.x**:
 1. **Slow, steady upstreaming:** We’ll propose and merge Ilum features incrementally to the Marquez project, focusing on safety and backwards compatibility.
 2. **Zero breakage policy:** We avoid breaking existing APIs and storage schemas. Any necessary changes will follow deprecation paths and upstream review.
 3. **UI track:** Our Ilum UI will be published as a separate open‑source UI for Marquez/OpenLineage, with a focus on searchability, large‑scale lineage exploration, and operational tooling.
+4. **Rust backend:** Maintains full API compatibility with the Java backend. SQL parity tests in CI verify query-level equivalence.
 
 > We mirror upstream tags and changelogs, and we consider regression budgets first‑class. If something isn’t ready for the community, it stays behind a flag or out‑of‑tree until it is.
 
@@ -45,6 +47,7 @@ Starting with **Marquez 0.52.x**:
 
 * **API / Model:** Compatible with upstream Marquez. Additive changes only.
 * **Spec alignment:** We follow OpenLineage spec compatibility as maintained by Marquez upstream.
+* **Backend:** The Rust backend is API-compatible with the Java backend.
 * **Version numbers:** We track upstream releases and document any deltas explicitly.
 
 ## Frequently asked questions

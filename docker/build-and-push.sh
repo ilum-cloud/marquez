@@ -25,12 +25,16 @@ fi
 
 echo "Building images (tag: ${version})..."
 
-# Build, tag and push app image
+# Build Rust image as default
 docker build --no-cache --tag "${ORG}/marquez:${version}" .
 docker tag "${ORG}/marquez:${version}" "${ORG}/marquez:latest"
 
 docker push "${ORG}/marquez:${version}"
 docker push "${ORG}/marquez:latest"
+
+# Build Java image as deprecated variant
+docker build --no-cache -f Dockerfile.java --tag "${ORG}/marquez:${version}-java" .
+docker push "${ORG}/marquez:${version}-java"
 
 # Change working directory to web module
 cd "${project_root}"/web

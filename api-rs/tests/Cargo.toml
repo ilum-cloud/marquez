@@ -1,0 +1,23 @@
+[package]
+name = "marquez-tests"
+version = "0.54.0"
+edition = "2021"
+
+[dependencies]
+marquez-api = { path = "../marquez-api" }
+sqlx = { workspace = true }
+tokio = { workspace = true }
+testcontainers = { workspace = true }
+testcontainers-modules = { workspace = true }
+reqwest = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+uuid = { workspace = true }
+chrono = { workspace = true }
+rand = { workspace = true }
+url = { workspace = true }
+axum = { workspace = true }
+tower = { workspace = true }
+tracing = { workspace = true }
+anyhow = { workspace = true }
+sha2 = { workspace = true }

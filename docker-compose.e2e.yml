@@ -1,0 +1,131 @@
+# Copyright 2024-2025 Ilum Labs LLC
+# SPDX-License-Identifier: Apache-2.0
+#
+# Docker Compose overlay for E2E validation.
+# Runs both Java (upstream) and Rust APIs side-by-side with separate databases.
+#
+# Usage:
+#   docker compose -p marquez-e2e -f docker-compose.e2e.yml up --build -d
+#   (or use scripts/e2e-validation/start-infra.sh)
+
+version: "3.7"
+services:
+  # ── Databases ──────────────────────────────────────────────────────────
+  db-rust:
+    image: postgres:16
+    container_name: marquez-e2e-db-rust
+    ports:
+      - "5434:5432"
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=password
+      - MARQUEZ_DB=marquez
+      - MARQUEZ_USER=marquez
+      - MARQUEZ_PASSWORD=marquez
+    volumes:
+      - db-rust-data:/var/lib/postgresql/data
+      - ./docker/postgresql.conf:/etc/postgresql/postgresql.conf
+      - ./docker/init-db.sh:/docker-entrypoint-initdb.d/init-db.sh
+    command: ["postgres", "-c", "config_file=/etc/postgresql/postgresql.conf"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  db-java:
+    image: postgres:16
+    container_name: marquez-e2e-db-java
+    ports:
+      - "5433:5432"
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=password
+      - MARQUEZ_DB=marquez
+      - MARQUEZ_USER=marquez
+      - MARQUEZ_PASSWORD=marquez
+    volumes:
+      - db-java-data:/var/lib/postgresql/data
+      - ./docker/postgresql.conf:/etc/postgresql/postgresql.conf
+      - ./docker/init-db.sh:/docker-entrypoint-initdb.d/init-db.sh
+    command: ["postgres", "-c", "config_file=/etc/postgresql/postgresql.conf"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # ── APIs ───────────────────────────────────────────────────────────────
+  api-rust:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: "ilum/marquez:e2e"
+    container_name: marquez-e2e-api-rust
+    environment:
+      - MARQUEZ_PORT=5000
+      - MARQUEZ_ADMIN_PORT=5001
+      - POSTGRES_HOST=db-rust
+      - POSTGRES_PORT=5432
+      - SEARCH_ENABLED=false
+    ports:
+      - "5000:5000"
+      - "5001:5001"
+    depends_on:
+      db-rust:
+        condition: service_healthy
+    entrypoint: ["./wait-for-it.sh", "db-rust:5432", "--timeout=60", "--", "./entrypoint.sh"]
+
+  api-java:
+    image: ilum/marquez:0.54.0-java
+    container_name: marquez-e2e-api-java
+    environment:
+      - MARQUEZ_PORT=5000
+      - MARQUEZ_ADMIN_PORT=5001
+      - POSTGRES_HOST=db-java
+      - POSTGRES_PORT=5432
+      - SEARCH_ENABLED=false
+    ports:
+      - "5010:5000"
+      - "5011:5001"
+    depends_on:
+      db-java:
+        condition: service_healthy
+    entrypoint: ["./entrypoint.sh"]
+
+  # ── Seed containers ───────────────────────────────────────────────────
+  seed-rust:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.seed
+    container_name: marquez-e2e-seed-rust
+    environment:
+      - MARQUEZ_URL=http://api-rust:5000
+      - SEED_BASE_TIME=${SEED_BASE_TIME}
+    volumes:
+      - ./docker/wait-for-it.sh:/usr/src/app/wait-for-it.sh
+      - ./scripts/e2e-validation/seed-e2e.sh:/usr/src/app/seed.sh
+      - ./docker/metadata.template.json:/usr/src/app/metadata.template.json
+    depends_on:
+      - api-rust
+    entrypoint: ["./wait-for-it.sh", "api-rust:5000", "--timeout=120", "--", "./seed.sh"]
+
+  seed-java:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.seed
+    container_name: marquez-e2e-seed-java
+    environment:
+      - MARQUEZ_URL=http://api-java:5000
+      - SEED_BASE_TIME=${SEED_BASE_TIME}
+    volumes:
+      - ./docker/wait-for-it.sh:/usr/src/app/wait-for-it.sh
+      - ./scripts/e2e-validation/seed-e2e.sh:/usr/src/app/seed.sh
+      - ./docker/metadata.template.json:/usr/src/app/metadata.template.json
+    depends_on:
+      - api-java
+    entrypoint: ["./wait-for-it.sh", "api-java:5000", "--timeout=120", "--", "./seed.sh"]
+
+volumes:
+  db-rust-data:
+  db-java-data:

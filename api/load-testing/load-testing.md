@@ -25,7 +25,7 @@ $ brew install k6
 
 | Component        | Image                                                                               | Description                                                                                                            |
 |------------------|-------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------|
-| Marquez HTTP API | [marquezproject/marquez](https://hub.docker.com/r/marquezproject/marquez)           | The core API used to collect metadata using [OpenLineage](https://openlineage.io).                                     |
+| Marquez HTTP API | [ilum/marquez](https://hub.docker.com/r/ilum/marquez)                               | The core API used to collect metadata using [OpenLineage](https://openlineage.io).                                     |
 | Database         | [bitnami/postgresql](https://hub.docker.com/r/bitnami/postgresql) or cloud provided | A PostgreSQL instance used to store metadata.                                                                          |
 
 
@@ -75,11 +75,13 @@ export default function () {
 
 ## Running Load Test with `k6` Locally
 
-1. Make sure you've created [`marquez.yml`](https://github.com/MarquezProject/marquez#configuration), then start Marquez HTTP server with:
+1. Make sure you've created [`marquez.yml`](https://github.com/ilum-cloud/marquez#configuration), then start Marquez HTTP server with:
 
    ```bash
-   $ ./gradlew :api:runShadow
+   $ cd api-rs && cargo run --bin marquez-api -- serve --config ../marquez-rs.dev.yml
    ```
+
+   > **Note:** Port depends on config — `5000` with `marquez-rs.dev.yml`, `8080` with defaults.
 
 2. Run load test:
 
@@ -91,4 +93,4 @@ export default function () {
 
 ----
 SPDX-License-Identifier: Apache-2.0
-Copyright 2018-2023 contributors to the Marquez project.
+Copyright 2018-2025 contributors to the Marquez project.
