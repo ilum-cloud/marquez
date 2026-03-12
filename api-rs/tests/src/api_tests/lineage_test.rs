@@ -336,3 +336,198 @@ async fn lineage_graph_has_edges_after_single_event() {
         "Output dataset node should have inEdges from the producing job"
     );
 }
+
+/// Bug 1 regression: depth parameter must limit lineage traversal.
+/// A 3-job chain queried with depth=1 should NOT include the third job.
+#[tokio::test]
+async fn lineage_depth_parameter_limits_traversal() {
+    let app = TestApp::new().await;
+
+    let ns = format!("depth_ns_{}", rand::random_range(0..u32::MAX));
+    let job_a = format!("job_a_{}", rand::random_range(0..u32::MAX));
+    let job_b = format!("job_b_{}", rand::random_range(0..u32::MAX));
+    let job_c = format!("job_c_{}", rand::random_range(0..u32::MAX));
+    let ds_ab = format!("ds_ab_{}", rand::random_range(0..u32::MAX));
+    let ds_bc = format!("ds_bc_{}", rand::random_range(0..u32::MAX));
+    let run_a = generators::new_run_id();
+    let run_b = generators::new_run_id();
+    let run_c = generators::new_run_id();
+
+    let post_url = format!("{}/api/v1/lineage", app.base_url);
+    let now = chrono::Utc::now().to_rfc3339_opts(chrono::SecondsFormat::Millis, true);
+
+    // job_a COMPLETE → outputs ds_ab
+    let resp = app
+        .client
+        .post(&post_url)
+        .json(&serde_json::json!({
+            "eventType": "COMPLETE",
+            "eventTime": now,
+            "run": { "runId": run_a.to_string() },
+            "job": { "namespace": ns, "name": job_a },
+            "inputs": [],
+            "outputs": [{ "namespace": ns, "name": ds_ab }],
+            "producer": "test"
+        }))
+        .send()
+        .await
+        .unwrap();
+    assert_eq!(resp.status(), 201);
+
+    // job_b COMPLETE → inputs ds_ab, outputs ds_bc
+    let resp = app
+        .client
+        .post(&post_url)
+        .json(&serde_json::json!({
+            "eventType": "COMPLETE",
+            "eventTime": now,
+            "run": { "runId": run_b.to_string() },
+            "job": { "namespace": ns, "name": job_b },
+            "inputs": [{ "namespace": ns, "name": ds_ab }],
+            "outputs": [{ "namespace": ns, "name": ds_bc }],
+            "producer": "test"
+        }))
+        .send()
+        .await
+        .unwrap();
+    assert_eq!(resp.status(), 201);
+
+    // job_c COMPLETE → inputs ds_bc
+    let resp = app
+        .client
+        .post(&post_url)
+        .json(&serde_json::json!({
+            "eventType": "COMPLETE",
+            "eventTime": now,
+            "run": { "runId": run_c.to_string() },
+            "job": { "namespace": ns, "name": job_c },
+            "inputs": [{ "namespace": ns, "name": ds_bc }],
+            "outputs": [],
+            "producer": "test"
+        }))
+        .send()
+        .await
+        .unwrap();
+    assert_eq!(resp.status(), 201);
+
+    // depth=1 from job_a: should see job_a + ds_ab + job_b but NOT ds_bc or job_c
+    let node_id = format!("job:{}:{}", ns, job_a);
+    let url = format!(
+        "{}/api/v1/lineage?nodeId={}&depth=1",
+        app.base_url, node_id
+    );
+    let resp = app.client.get(&url).send().await.unwrap();
+    assert_eq!(resp.status(), 200);
+    let body: Value = resp.json().await.unwrap();
+    let graph = body["graph"].as_array().expect("graph array");
+    let node_ids: Vec<&str> = graph
+        .iter()
+        .filter_map(|n| n["id"].as_str())
+        .collect();
+    assert!(
+        node_ids.iter().any(|id| id.contains(&job_a)),
+        "depth=1 should include job_a"
+    );
+    assert!(
+        node_ids.iter().any(|id| id.contains(&job_b)),
+        "depth=1 should include job_b (1 hop)"
+    );
+    assert!(
+        !node_ids.iter().any(|id| id.contains(&job_c)),
+        "depth=1 should NOT include job_c (2 hops). Nodes: {:?}",
+        node_ids
+    );
+
+    // depth=10: should include all jobs
+    let deep_url = format!(
+        "{}/api/v1/lineage?nodeId={}&depth=10",
+        app.base_url, node_id
+    );
+    let resp = app.client.get(&deep_url).send().await.unwrap();
+    assert_eq!(resp.status(), 200);
+    let body: Value = resp.json().await.unwrap();
+    let graph = body["graph"].as_array().expect("graph array");
+    let node_ids: Vec<&str> = graph
+        .iter()
+        .filter_map(|n| n["id"].as_str())
+        .collect();
+    assert!(
+        node_ids.iter().any(|id| id.contains(&job_c)),
+        "depth=10 should include job_c. Nodes: {:?}",
+        node_ids
+    );
+}
+
+/// Bug 2 regression: facets in lineage response must be flat, not double-wrapped.
+#[tokio::test]
+async fn lineage_run_facets_are_flat() {
+    let app = TestApp::new().await;
+
+    let ns = format!("facet_ns_{}", rand::random_range(0..u32::MAX));
+    let job = generators::new_job_name();
+    let run_id = generators::new_run_id();
+    let now = chrono::Utc::now().to_rfc3339_opts(chrono::SecondsFormat::Millis, true);
+
+    // Post COMPLETE event with a run facet (sql)
+    let post_url = format!("{}/api/v1/lineage", app.base_url);
+    let resp = app
+        .client
+        .post(&post_url)
+        .json(&serde_json::json!({
+            "eventType": "COMPLETE",
+            "eventTime": now,
+            "run": {
+                "runId": run_id.to_string(),
+                "facets": {
+                    "sql": {
+                        "query": "CREATE TABLE t AS SELECT 1",
+                        "_producer": "test",
+                        "_schemaURL": "https://openlineage.io/spec/facets/1-0-0/SqlJobFacet.json"
+                    }
+                }
+            },
+            "job": { "namespace": ns, "name": job },
+            "inputs": [],
+            "outputs": [],
+            "producer": "test"
+        }))
+        .send()
+        .await
+        .unwrap();
+    assert_eq!(resp.status(), 201);
+
+    // GET lineage and check the job node's latestRun facets
+    let node_id = format!("job:{}:{}", ns, job);
+    let url = format!(
+        "{}/api/v1/lineage?nodeId={}&depth=10",
+        app.base_url, node_id
+    );
+    let resp = app.client.get(&url).send().await.unwrap();
+    assert_eq!(resp.status(), 200);
+
+    let body: Value = resp.json().await.unwrap();
+    let graph = body["graph"].as_array().expect("graph array");
+    let job_node = graph
+        .iter()
+        .find(|n| n["type"] == "JOB")
+        .expect("should have JOB node");
+
+    let latest_run = &job_node["data"]["latestRun"];
+    if !latest_run.is_null() {
+        let facets = &latest_run["facets"];
+        if !facets.is_null() && facets.get("sql").is_some() {
+            let sql_facet = &facets["sql"];
+            // Should be {"query": "...", ...}, NOT {"sql": {"query": "..."}}
+            assert!(
+                sql_facet.get("query").is_some(),
+                "sql facet should directly contain 'query', got: {}",
+                sql_facet
+            );
+            assert!(
+                sql_facet.get("sql").is_none(),
+                "sql facet should NOT be double-wrapped, got: {}",
+                facets
+            );
+        }
+    }
+}
