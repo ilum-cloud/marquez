@@ -4,9 +4,31 @@
 
 ## [0.54.0](https://github.com/ilum-cloud/marquez/compare/0.53.0...0.54.0) - 2026-03-02
 
+### Added
+
+* API: **Rust backend** — complete rewrite of the Marquez API from Java/Dropwizard to **Rust** (Axum + SQLx + tokio), delivering improved performance and lower resource usage while maintaining 100% API compatibility with upstream Marquez. The Java backend (`api/`) is preserved as a fallback via `./docker/up.sh --java`. [`#14`](https://github.com/ilum-cloud/marquez/pull/14) [@thijs-s](https://github.com/thijs-s) [@ilum-cloud](https://github.com/ilum-cloud)
+  *~38 000 lines of new Rust code across 5 workspace crates: marquez-api, marquez-search, marquez-graphql, marquez-tracing, and marquez-tests — with comprehensive DAO, service, and API integration tests plus SQL parity tests ensuring query-level equivalence with the Java implementation.*
+* API: **New** `GET` `/api/v1/search/full` advanced search returning full dataset/job objects instead of search summaries for richer client-side discovery. [@thijs-s](https://github.com/thijs-s) [@ilum-cloud](https://github.com/ilum-cloud)
+* API: **New** `lineageStatistics` dataset facet providing upstream/downstream dependency counts and cross-team lineage visibility, computed efficiently at write time. [`#9`](https://github.com/ilum-cloud/marquez/pull/9) [@thijs-s](https://github.com/thijs-s) [@ilum-cloud](https://github.com/ilum-cloud)
+* deploy: **AWS ECS** deployment configuration with **Terraform** — production-ready VPC, CloudFront, ECS services, and deployment scripts. [`#2`](https://github.com/ilum-cloud/marquez/pull/2) [@shunskkkk](https://github.com/shunskkkk)
+* docker: Support `MARQUEZ_DB_*` and `POSTGRESQL_HOST` env vars in Docker entrypoint for flexible database configuration. [`#12`](https://github.com/ilum-cloud/marquez/pull/12) [@thijs-s](https://github.com/thijs-s) [@ilum-cloud](https://github.com/ilum-cloud)
+* docker: End-to-end Docker Compose stack (`docker-compose.e2e.yml`) for integration testing. [@thijs-s](https://github.com/thijs-s) [@ilum-cloud](https://github.com/ilum-cloud)
+
 ### Changed
 
-* API: **Rewritten in Rust** — the API backend has been fully rewritten using Axum, SQLx, and tokio for improved performance and lower resource usage. The Java Dropwizard backend (`api/`) is now deprecated. [@ilum-cloud](https://github.com/ilum-cloud)
+* db: Upgrade **PostgreSQL** from 14 to **16**, **JDBI** to 3.51.0, and **Flyway** to 11.20.2, with automated migration scripts for existing deployments. [`#10`](https://github.com/ilum-cloud/marquez/pull/10) [@thijs-s](https://github.com/thijs-s) [@ilum-cloud](https://github.com/ilum-cloud)
+* chart: Helm chart reworked — updated templates, added PodDisruptionBudget and ServiceAccount, switched image registry to `ilum`. [`#6`](https://github.com/ilum-cloud/marquez/pull/6) [`#7`](https://github.com/ilum-cloud/marquez/pull/7) [@thijs-s](https://github.com/thijs-s) [@ilum-cloud](https://github.com/ilum-cloud)
+* docker: Docker Compose files and seed images now use `ilum` as the container organization. [@thijs-s](https://github.com/thijs-s) [@ilum-cloud](https://github.com/ilum-cloud)
+* web: Dockerfile optimized and updated. [@thijs-s](https://github.com/thijs-s) [@ilum-cloud](https://github.com/ilum-cloud)
+* security: Dependency vulnerability fixes across `web/`, `docs/`, and `dev/` packages. [@thijs-s](https://github.com/thijs-s) [@ilum-cloud](https://github.com/ilum-cloud)
+
+### Fixed
+
+* API: Fix duplicate dataset fields explosion when field type is `null` — `NULL` types are now stored as `'UNKNOWN'` to satisfy the unique constraint, preventing exponential row growth in `column_lineage`. [`#8`](https://github.com/ilum-cloud/marquez/pull/8) [@thijs-s](https://github.com/thijs-s) [@ilum-cloud](https://github.com/ilum-cloud)
+  *Resolves upstream [`#3083`](https://github.com/MarquezProject/marquez/issues/3083).*
+* chart: Use secret reference for DB password in `wait-for-db` init container instead of hardcoded value. [`#7`](https://github.com/ilum-cloud/marquez/pull/7) [@thijs-s](https://github.com/thijs-s) [@ilum-cloud](https://github.com/ilum-cloud)
+* docker: Fix volume name normalization to lowercase on macOS. [@thijs-s](https://github.com/thijs-s) [@ilum-cloud](https://github.com/ilum-cloud)
+* docker: Add execute permission to `entrypoint.sh` for containerized environments (ECS). [@shunskkkk](https://github.com/shunskkkk)
 
 ## [0.53.0](https://github.com/ilum-cloud/marquez/compare/0.50.0...0.53.0) - 2025-08-30
 

@@ -174,7 +174,7 @@ pub async fn get_lineage(
                 WHERE io.is_current_job_version = TRUE \
                 GROUP BY io.job_symlink_target_uuid, io.job_uuid \
             ), \
-            lineage(job_uuid, job_symlink_target_uuid, inputs, outputs) AS ( \
+            lineage(job_uuid, job_symlink_target_uuid, inputs, outputs, depth) AS ( \
                 SELECT job_uuid, job_symlink_target_uuid, \
                        COALESCE(inputs, ARRAY[]::uuid[]) AS inputs, \
                        COALESCE(outputs, ARRAY[]::uuid[]) AS outputs, \
@@ -247,7 +247,8 @@ pub async fn get_dataset_data(
     ds_uuids: &[Uuid],
 ) -> Result<Vec<DatasetDataRow>, sqlx::Error> {
     sqlx::query_as::<_, DatasetDataRow>(
-        "SELECT ds.uuid, ds.type, ds.created_at, ds.updated_at, \
+        "SELECT DISTINCT ON (ds.uuid) \
+                ds.uuid, ds.type, ds.created_at, ds.updated_at, \
                 ds.namespace_uuid, ds.namespace_name, \
                 ds.source_uuid, ds.source_name, \
                 ds.name, ds.physical_name, ds.description, \
@@ -257,8 +258,10 @@ pub async fn get_dataset_data(
          FROM datasets_view ds \
          LEFT JOIN dataset_versions dv ON dv.uuid = ds.current_version_uuid \
          LEFT JOIN dataset_symlinks dsym \
-             ON dsym.namespace_uuid = ds.namespace_uuid AND dsym.name = ds.name \
-         WHERE dsym.is_primary = true AND ds.uuid = ANY($1)",
+             ON dsym.namespace_uuid = ds.namespace_uuid \
+             AND dsym.name = ds.name \
+             AND dsym.is_primary = true \
+         WHERE ds.uuid = ANY($1)",
     )
     .bind(ds_uuids)
     .fetch_all(pool)
@@ -269,9 +272,7 @@ pub async fn get_dataset_data(
 ///
 /// Two-step approach: first resolves the dataset UUID via any matching row
 /// in `datasets_view` (which may be a symlink), then delegates to
-/// `get_dataset_data()` which filters by `is_primary = true` — ensuring
-/// we always return the primary symlink row regardless of which
-/// namespace/name alias was queried. Matches Java's `LineageDao` behaviour.
+/// `get_dataset_data()`. Matches Java's `LineageDao` behaviour.
 pub async fn get_dataset_data_by_name(
     pool: &PgPool,
     namespace_name: &str,
@@ -288,7 +289,7 @@ pub async fn get_dataset_data_by_name(
     .fetch_optional(pool)
     .await?;
 
-    // Step 2: Use get_dataset_data() which has the is_primary filter
+    // Step 2: Delegate to get_dataset_data()
     match uuid_row {
         Some((uuid,)) => get_dataset_data(pool, &[uuid]).await,
         None => Ok(vec![]),
@@ -366,11 +367,12 @@ pub async fn get_current_runs_with_facets(
         ) ri ON ri.run_uuid = r.uuid \
         LEFT JOIN LATERAL ( \
             SELECT r.uuid AS run_uuid, \
-                   (SELECT jsonb_object_agg(sub.name, sub.facet) \
-                    FROM (SELECT DISTINCT ON (rf2.name) rf2.name, rf2.facet \
+                   (SELECT jsonb_object_agg(kv.key, kv.value) \
+                    FROM (SELECT DISTINCT ON (kv2.key) kv2.key, kv2.value \
                           FROM run_facets rf2 \
+                          CROSS JOIN LATERAL jsonb_each(rf2.facet) AS kv2(key, value) \
                           WHERE rf2.run_uuid = r.uuid \
-                          ORDER BY rf2.name, rf2.lineage_event_time DESC) sub \
+                          ORDER BY kv2.key, rf2.lineage_event_time DESC) kv \
                    ) AS facets \
         ) AS f ON f.run_uuid = r.uuid \
         LEFT JOIN LATERAL ( \
