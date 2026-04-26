@@ -647,11 +647,18 @@ pub async fn update_base_marquez_model(
     let run_state_done = matches!(run_state.as_str(), "COMPLETED" | "ABORTED" | "FAILED");
     let inputs_empty = event.inputs.as_ref().map(|v| v.is_empty()).unwrap_or(true);
     let outputs_empty = event.outputs.as_ref().map(|v| v.is_empty()).unwrap_or(true);
-    // Guard against clearing IO mappings for streaming jobs that send
-    // events without datasets (heartbeats or terminal events).
-    // Java skips version creation and IO clearing for any streaming event
-    // with no datasets, not just terminal ones.
-    let is_streaming_event_no_datasets = is_streaming && inputs_empty && outputs_empty;
+    // Two separate guards for streaming jobs with no datasets:
+    //
+    // 1. IO cleanup: protect ALL streaming events with no datasets from
+    //    clearing IO mappings (heartbeats should not wipe accumulated I/O).
+    let is_streaming_no_datasets = is_streaming && inputs_empty && outputs_empty;
+    //
+    // 2. Version creation: only skip TERMINAL streaming events with no
+    //    datasets (matches Java's isTerminalEventForStreamingJobWithNoDatasets).
+    //    Non-terminal events (START, RUNNING) must still create job versions
+    //    so that latestRun and the lineage graph are populated.
+    let is_terminal_streaming_no_datasets =
+        is_streaming && run_state_done && inputs_empty && outputs_empty;
 
     // 1. Upsert namespace (inline because namespace::upsert takes &PgPool)
     let ns_name = format_namespace_name(&event.job.namespace);
@@ -862,7 +869,7 @@ pub async fn update_base_marquez_model(
             .await?;
             input_dataset_pairs.push((ds_uuid, dv_uuid));
         }
-    } else if !is_streaming_event_no_datasets {
+    } else if !is_streaming_no_datasets {
         // No inputs (None or empty) — mark all current INPUT mappings as previous
         // for this job (matches Java OpenLineageDao.java:381-384)
         sqlx::query(
@@ -892,7 +899,7 @@ pub async fn update_base_marquez_model(
             .await?;
             output_dataset_pairs.push((ds_uuid, dv_uuid));
         }
-    } else if !is_streaming_event_no_datasets {
+    } else if !is_streaming_no_datasets {
         // No outputs (None or empty) — mark all current OUTPUT mappings as previous
         // for this job (matches Java OpenLineageDao.java:397-400)
         sqlx::query(
@@ -999,7 +1006,7 @@ pub async fn update_base_marquez_model(
     let should_create_job_version = if is_streaming {
         // Streaming: only create if version doesn't exist yet AND not a
         // terminal event with no datasets
-        if is_streaming_event_no_datasets {
+        if is_terminal_streaming_no_datasets {
             false
         } else {
             !crate::db::job_version::version_exists_exec(&mut **tx, version_uuid).await?

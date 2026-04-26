@@ -1269,6 +1269,166 @@ async fn batch_job_version_gating() {
     );
 }
 
+/// Streaming START with no datasets should still create a job version
+/// so that latestRun is populated in the lineage graph.
+/// Regression test for the overly broad `is_streaming_event_no_datasets` guard.
+#[tokio::test]
+async fn streaming_start_no_datasets_creates_version() {
+    let app = TestApp::new().await;
+    let ns = generators::new_namespace_name();
+    let job_name = generators::new_job_name();
+    let run_id = Uuid::new_v4();
+
+    let job_facets = json!({
+        "jobType": {
+            "_producer": "test",
+            "_schemaURL": "test",
+            "processingType": "STREAMING",
+            "integration": "SPARK",
+            "jobType": "JOB"
+        }
+    });
+
+    // Send START with no datasets (common for Spark streaming child tasks)
+    let start_event = make_run_event(
+        "START",
+        &ns,
+        &job_name,
+        &run_id.to_string(),
+        vec![],
+        vec![],
+        None,
+        Some(job_facets.clone()),
+    );
+    post_lineage(&app, &start_event).await;
+
+    // A job version should exist so latestRun can be resolved
+    let version_count = get_job_versions_count(&app, &ns, &job_name).await;
+    assert_eq!(
+        version_count, 1,
+        "Streaming START with no datasets should create a version, got {}",
+        version_count
+    );
+
+    // Lineage graph should show latestRun
+    let graph = get_lineage_graph(&app, &ns, &job_name).await;
+    let job_node = graph
+        .iter()
+        .find(|n| n["type"] == "JOB")
+        .expect("job node in lineage");
+    assert!(
+        !job_node["data"]["latestRun"].is_null(),
+        "latestRun should be populated for streaming START, got null"
+    );
+}
+
+/// Streaming COMPLETE with no datasets should NOT create a job version
+/// (matches Java's isTerminalEventForStreamingJobWithNoDatasets guard).
+#[tokio::test]
+async fn streaming_complete_no_datasets_skips_version() {
+    let app = TestApp::new().await;
+    let ns = generators::new_namespace_name();
+    let job_name = generators::new_job_name();
+    let run_id = Uuid::new_v4();
+
+    let job_facets = json!({
+        "jobType": {
+            "_producer": "test",
+            "_schemaURL": "test",
+            "processingType": "STREAMING",
+            "integration": "SPARK",
+            "jobType": "JOB"
+        }
+    });
+
+    // Send only a COMPLETE event with no datasets
+    let complete_event = make_run_event(
+        "COMPLETE",
+        &ns,
+        &job_name,
+        &run_id.to_string(),
+        vec![],
+        vec![],
+        None,
+        Some(job_facets.clone()),
+    );
+    post_lineage(&app, &complete_event).await;
+
+    let version_count = get_job_versions_count(&app, &ns, &job_name).await;
+    assert_eq!(
+        version_count, 0,
+        "Streaming COMPLETE with no datasets should NOT create a version, got {}",
+        version_count
+    );
+}
+
+/// Streaming RUNNING heartbeat should not clear IO mappings from a prior event.
+#[tokio::test]
+async fn streaming_heartbeat_preserves_io_mappings() {
+    let app = TestApp::new().await;
+    let ns = generators::new_namespace_name();
+    let job_name = generators::new_job_name();
+    let run_id = Uuid::new_v4();
+
+    let job_facets = json!({
+        "jobType": {
+            "_producer": "test",
+            "_schemaURL": "test",
+            "processingType": "STREAMING",
+            "integration": "FLINK",
+            "jobType": "JOB"
+        }
+    });
+
+    // START with datasets
+    let start_event = make_run_event(
+        "START",
+        &ns,
+        &job_name,
+        &run_id.to_string(),
+        vec![json!({ "namespace": ns, "name": "stream_in" })],
+        vec![json!({ "namespace": ns, "name": "stream_out" })],
+        None,
+        Some(job_facets.clone()),
+    );
+    post_lineage(&app, &start_event).await;
+
+    // RUNNING heartbeat with no datasets
+    let heartbeat = make_run_event(
+        "RUNNING",
+        &ns,
+        &job_name,
+        &run_id.to_string(),
+        vec![],
+        vec![],
+        None,
+        Some(job_facets.clone()),
+    );
+    post_lineage(&app, &heartbeat).await;
+
+    // Lineage should still show the datasets from START
+    let graph = get_lineage_graph(&app, &ns, &job_name).await;
+    let job_node = graph
+        .iter()
+        .find(|n| n["type"] == "JOB")
+        .expect("job node");
+    let inputs = job_node["data"]["inputs"].as_array().expect("inputs array");
+    let outputs = job_node["data"]["outputs"].as_array().expect("outputs array");
+
+    assert_eq!(
+        inputs.len(),
+        1,
+        "Heartbeat should not clear inputs, got {:?}",
+        inputs
+    );
+    assert_eq!(
+        outputs.len(),
+        1,
+        "Heartbeat should not clear outputs, got {:?}",
+        outputs
+    );
+}
+
 // ---------------------------------------------------------------------------
 // Bug 4: Run Args Persistence Tests
 // ---------------------------------------------------------------------------
