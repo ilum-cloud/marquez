@@ -239,7 +239,7 @@ const Datasets: React.FC<DatasetsProps> = ({
                               <MqText
                                 link
                                 linkTo={`column-level/${encodeURIComponent(
-                                  encodeURIComponent(dataset.id.namespace)
+                                  dataset.id.namespace
                                 )}/${encodeURIComponent(dataset.id.name)}`}
                               >
                                 VIEW
