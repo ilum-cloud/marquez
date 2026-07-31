@@ -5,6 +5,16 @@
 #
 # Usage: $ ./migrate-db.sh [backup|restore] [FLAGS]
 
+# This script uses bash features (`[[ ]]`) that POSIX shells do not implement.
+# Re-exec under bash so `sh ./docker/migrate-db.sh` works too (see up.sh).
+if [ -z "${BASH_VERSION:-}" ]; then
+  if ! command -v bash > /dev/null 2>&1; then
+    echo "ERROR: ./docker/migrate-db.sh requires bash, but bash was not found on PATH." >&2
+    exit 1
+  fi
+  exec bash "$0" "$@"
+fi
+
 set -e
 
 title() {

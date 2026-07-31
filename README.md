@@ -51,19 +51,23 @@ $ ./docker/up.sh
 
 ### Windows users:
 
-Before cloning Marquez, configure Git to check out files with Unix-style file endings:
-
-```bash
-$ git config --global core.autocrlf false
-```
-
-Verify that Bash and PostgreSQL have been installed and added to the PATH variable (Git Bash is recommended).
+Marquez is started through Bash scripts, so you need Bash on your PATH. Either [WSL2](https://learn.microsoft.com/windows/wsl/install) (recommended, and already used by Docker Desktop) or Git Bash works.
 
 Start all services:
 
 ```bash
-$ sh ./docker/up.sh
+$ ./docker/up.sh
 ```
+
+If the script is not marked executable in your checkout, invoke it explicitly with Bash:
+
+```bash
+$ bash ./docker/up.sh
+```
+
+> **Note:** Use `bash`, not `sh`. On WSL and Ubuntu `/bin/sh` is `dash`, which does not support the `[[ ]]` syntax these scripts use. The scripts now re-exec themselves under Bash automatically, but in older checkouts `sh ./docker/up.sh` prints `[[: not found`, skips volume provisioning, and `marquez-db` then exits with `could not access the server configuration file "/etc/postgresql/postgresql.conf"`.
+
+> **Note:** Line endings are pinned to LF via [`.gitattributes`](./.gitattributes). If you cloned before that file was added and the scripts fail with `bad interpreter: /bin/bash^M`, run `git config --global core.autocrlf false` and re-clone.
 
 > **Tip:** Use the `--build` flag to build images from source, and/or `--seed` to start Marquez with sample lineage metadata. For a more complete example using the sample metadata, please follow our [quickstart](https://marquezproject.github.io/marquez/quickstart.html) guide.
 

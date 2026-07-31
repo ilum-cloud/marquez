@@ -5,6 +5,20 @@
 #
 # Usage: $ ./up.sh [FLAGS] [ARG...]
 
+# This script uses bash features (`[[ ]]`, `+=`) that POSIX shells do not implement.
+# On Debian/Ubuntu (including WSL) /bin/sh is dash, so `sh ./docker/up.sh` would
+# silently skip every conditional below -- most importantly the call to
+# ./docker/volumes.sh -- and bring the stack up with unprovisioned volumes, making
+# postgres exit with 'could not access the server configuration file'. Re-exec
+# under bash so the script behaves identically however it is invoked.
+if [ -z "${BASH_VERSION:-}" ]; then
+  if ! command -v bash > /dev/null 2>&1; then
+    echo "ERROR: ./docker/up.sh requires bash, but bash was not found on PATH." >&2
+    exit 1
+  fi
+  exec bash "$0" "$@"
+fi
+
 set -e
 
 # Version of Marquez
