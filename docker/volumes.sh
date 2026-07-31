@@ -23,10 +23,13 @@ title() {
   echo -e "\033[1m${1}\033[0m"
 }
 
-# No `-it` here: allocating a TTY fails under Git Bash and in non-interactive
-# environments (CI, piped output) with 'the input device is not a TTY'.
+# No `-it` here: it fails with 'the input device is not a TTY' whenever stdin is
+# not a terminal (CI, piped output), and a TTY is pointless for a one-shot ls.
+# MSYS_NO_PATHCONV stops Git Bash rewriting the container-side /tmp into a Windows
+# path, which made this print a "No such file or directory" error instead of the
+# volume contents, so provisioning looked like it had failed when it had not.
 ls() {
-  docker run --rm -v "${1}:/tmp" busybox ls /tmp
+  MSYS_NO_PATHCONV=1 docker run --rm -v "${1}:/tmp" busybox ls /tmp
 }
 
 usage() {

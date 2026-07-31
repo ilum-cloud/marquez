@@ -203,8 +203,10 @@ fi
 # Check for Postgres version incompatibility
 VOLUME_NAME="${PROJECT_NAME}_db-backup"
 if docker volume inspect "${VOLUME_NAME}" > /dev/null 2>&1; then
-  # Check PG_VERSION
-  PG_VERSION=$(docker run --rm -v "${VOLUME_NAME}:/data" busybox cat /data/PG_VERSION 2>/dev/null || echo "")
+  # Check PG_VERSION. MSYS_NO_PATHCONV stops Git Bash rewriting the container-side
+  # /data into a Windows path, which made this read fail silently and left
+  # PG_VERSION empty, disabling the incompatibility check entirely on Windows.
+  PG_VERSION=$(MSYS_NO_PATHCONV=1 docker run --rm -v "${VOLUME_NAME}:/data" busybox cat /data/PG_VERSION 2>/dev/null || echo "")
   if [[ -n "$PG_VERSION" && "$PG_VERSION" -lt 16 ]]; then
     echo -e "\033[0;31mERROR: Incompatible PostgreSQL version detected ($PG_VERSION) in volume '${VOLUME_NAME}'.\033[0m"
     echo -e "\033[0;31mMarquez now requires PostgreSQL 16.\033[0m"
