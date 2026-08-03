@@ -5,12 +5,31 @@
 #
 # Usage: $ ./volumes.sh <volume-prefix>
 
+# This script uses bash features (`[[ ]]`) that POSIX shells do not implement.
+# Re-exec under bash so `sh ./docker/volumes.sh` works too (see up.sh).
+if [ -z "${BASH_VERSION:-}" ]; then
+  if ! command -v bash > /dev/null 2>&1; then
+    echo "ERROR: ./docker/volumes.sh requires bash, but bash was not found on PATH." >&2
+    exit 1
+  fi
+  exec bash "$0" "$@"
+fi
+
+# Fail loudly: if provisioning does not complete, postgres later dies with the
+# confusing 'could not access the server configuration file' error instead.
+set -e
+
 title() {
   echo -e "\033[1m${1}\033[0m"
 }
 
+# No `-it` here: it fails with 'the input device is not a TTY' whenever stdin is
+# not a terminal (CI, piped output), and a TTY is pointless for a one-shot ls.
+# MSYS_NO_PATHCONV stops Git Bash rewriting the container-side /tmp into a Windows
+# path, which made this print a "No such file or directory" error instead of the
+# volume contents, so provisioning looked like it had failed when it had not.
 ls() {
-  docker run -it --rm -v "${1}:/tmp" busybox ls /tmp
+  MSYS_NO_PATHCONV=1 docker run --rm -v "${1}:/tmp" busybox ls /tmp
 }
 
 usage() {
@@ -52,12 +71,17 @@ docker volume create "${db_init_volume}" > /dev/null
 docker volume create "${db_backup_volume}" > /dev/null
 docker volume create "${opensearch_volume}" > /dev/null
 
-# Provision persistent volumes for Marquez
+# Remove a provisioner left behind by an interrupted run, otherwise the
+# `docker create` below fails on the duplicate container name.
+docker rm -f volumes-provisioner > /dev/null 2>&1 || true
+
+# Provision persistent volumes for Marquez (stderr is left visible so a failure
+# here is reported rather than swallowed)
 docker create --name volumes-provisioner \
   -v "${data_volume}:/data" \
   -v "${db_conf_volume}:/db-conf" \
   -v "${db_init_volume}:/db-init" \
-  busybox > /dev/null 2>&1
+  busybox > /dev/null
 
 # Add startup configuration for Marquez
 docker cp ./docker/wait-for-it.sh volumes-provisioner:/data/wait-for-it.sh

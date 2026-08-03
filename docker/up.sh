@@ -5,6 +5,20 @@
 #
 # Usage: $ ./up.sh [FLAGS] [ARG...]
 
+# This script uses bash features (`[[ ]]`, `+=`) that POSIX shells do not implement.
+# On Debian/Ubuntu (including WSL) /bin/sh is dash, so `sh ./docker/up.sh` would
+# silently skip every conditional below -- most importantly the call to
+# ./docker/volumes.sh -- and bring the stack up with unprovisioned volumes, making
+# postgres exit with 'could not access the server configuration file'. Re-exec
+# under bash so the script behaves identically however it is invoked.
+if [ -z "${BASH_VERSION:-}" ]; then
+  if ! command -v bash > /dev/null 2>&1; then
+    echo "ERROR: ./docker/up.sh requires bash, but bash was not found on PATH." >&2
+    exit 1
+  fi
+  exec bash "$0" "$@"
+fi
+
 set -e
 
 # Version of Marquez
@@ -189,8 +203,10 @@ fi
 # Check for Postgres version incompatibility
 VOLUME_NAME="${PROJECT_NAME}_db-backup"
 if docker volume inspect "${VOLUME_NAME}" > /dev/null 2>&1; then
-  # Check PG_VERSION
-  PG_VERSION=$(docker run --rm -v "${VOLUME_NAME}:/data" busybox cat /data/PG_VERSION 2>/dev/null || echo "")
+  # Check PG_VERSION. MSYS_NO_PATHCONV stops Git Bash rewriting the container-side
+  # /data into a Windows path, which made this read fail silently and left
+  # PG_VERSION empty, disabling the incompatibility check entirely on Windows.
+  PG_VERSION=$(MSYS_NO_PATHCONV=1 docker run --rm -v "${VOLUME_NAME}:/data" busybox cat /data/PG_VERSION 2>/dev/null || echo "")
   if [[ -n "$PG_VERSION" && "$PG_VERSION" -lt 16 ]]; then
     echo -e "\033[0;31mERROR: Incompatible PostgreSQL version detected ($PG_VERSION) in volume '${VOLUME_NAME}'.\033[0m"
     echo -e "\033[0;31mMarquez now requires PostgreSQL 16.\033[0m"

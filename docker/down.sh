@@ -5,6 +5,16 @@
 #
 # Usage: $ ./down.sh [FLAGS]
 
+# This script uses bash features (`+=`, `${RANDOM}`) that POSIX shells do not
+# implement. Re-exec under bash so `sh ./docker/down.sh` works too (see up.sh).
+if [ -z "${BASH_VERSION:-}" ]; then
+  if ! command -v bash > /dev/null 2>&1; then
+    echo "ERROR: ./docker/down.sh requires bash, but bash was not found on PATH." >&2
+    exit 1
+  fi
+  exec bash "$0" "$@"
+fi
+
 set -e
 
 title() {

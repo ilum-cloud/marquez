@@ -1,0 +1,15 @@
+# Normalize line endings so a Windows checkout cannot break the Docker stack.
+#
+# With Git's default `core.autocrlf=true` on Windows, these files are checked out
+# with CRLF. That breaks them twice over: the host shell fails to run them
+# ("/bin/bash^M: bad interpreter"), and the Dockerfile COPYs entrypoint.sh and
+# wait-for-it.sh into the image, so the containers inherit the same failure.
+# Forcing eol=lf here makes the checkout correct regardless of a user's
+# core.autocrlf setting.
+
+*.sh                    text eol=lf
+Dockerfile*             text eol=lf
+*.yml                   text eol=lf
+*.yaml                  text eol=lf
+docker/postgresql.conf  text eol=lf
+gradlew                 text eol=lf
