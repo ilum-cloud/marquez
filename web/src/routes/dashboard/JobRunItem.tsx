@@ -22,7 +22,10 @@ const JobRunItem: React.FC<Props> = ({ job }) => {
   const navigate = useNavigate()
   const reversedRuns = [...(job.latestRuns || [])].reverse()
   const longestRun = useMemo(
-    () => job.latestRuns?.reduce((acc, run) => (acc.durationMs > run.durationMs ? acc : run)),
+    () =>
+      job.latestRuns?.length
+        ? job.latestRuns.reduce((acc, run) => (acc.durationMs > run.durationMs ? acc : run))
+        : undefined,
     [job.latestRuns]
   )
   return (
@@ -99,7 +102,7 @@ const JobRunItem: React.FC<Props> = ({ job }) => {
                     mr={0.5}
                     minHeight={2}
                     width={5}
-                    height={(run.durationMs / longestRun.durationMs) * 40}
+                    height={(run.durationMs / (longestRun?.durationMs || 1)) * 40}
                     sx={{
                       borderTopLeftRadius: theme.shape.borderRadius,
                       borderTopRightRadius: theme.shape.borderRadius,
