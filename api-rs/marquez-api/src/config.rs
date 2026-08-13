@@ -24,6 +24,22 @@ fn default_db_port() -> u16 {
     5432
 }
 
+fn default_db_host() -> String {
+    "localhost".to_string()
+}
+
+fn default_db_name() -> String {
+    "marquez".to_string()
+}
+
+fn default_db_user() -> String {
+    "marquez".to_string()
+}
+
+fn default_db_password() -> String {
+    "marquez".to_string()
+}
+
 fn default_pool_size() -> u32 {
     10
 }
@@ -42,6 +58,7 @@ fn default_retention_days() -> i32 {
 
 #[derive(Debug, Deserialize)]
 pub struct MarquezConfig {
+    #[serde(default)]
     pub db: DbConfig,
     #[serde(default)]
     pub server: ServerConfig,
@@ -102,14 +119,31 @@ impl Default for ServerConfig {
 
 #[derive(Debug, Deserialize)]
 pub struct DbConfig {
+    #[serde(default = "default_db_host")]
     pub host: String,
     #[serde(default = "default_db_port")]
     pub port: u16,
+    #[serde(default = "default_db_name")]
     pub name: String,
+    #[serde(default = "default_db_user")]
     pub user: String,
+    #[serde(default = "default_db_password")]
     pub password: String,
     #[serde(default = "default_pool_size")]
     pub max_pool_size: u32,
+}
+
+impl Default for DbConfig {
+    fn default() -> Self {
+        Self {
+            host: default_db_host(),
+            port: default_db_port(),
+            name: default_db_name(),
+            user: default_db_user(),
+            password: default_db_password(),
+            max_pool_size: default_pool_size(),
+        }
+    }
 }
 
 #[derive(Debug, Deserialize, Clone)]

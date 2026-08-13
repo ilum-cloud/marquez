@@ -40,6 +40,13 @@ The command removes all the Kubernetes components associated with the chart and 
 | `marquez.image.tag`           | Image tag                                            | `0.54.0`                               |
 | `marquez.image.pullPolicy`    | Image pull policy                                    | `IfNotPresent`                         |
 | `marquez.existingSecretName`  | Name of existing secret for DB credentials           | `""`                                   |
+| `marquez.existingSecretKeys.passwordKey`  | Secret key holding the DB password       | `marquez-db-password`                  |
+| `marquez.existingSecretKeys.hostKey`      | Secret key holding the DB host (optional)     | `""`                              |
+| `marquez.existingSecretKeys.portKey`      | Secret key holding the DB port (optional)     | `""`                              |
+| `marquez.existingSecretKeys.databaseKey`  | Secret key holding the DB name (optional)     | `""`                              |
+| `marquez.existingSecretKeys.userKey`      | Secret key holding the DB user (optional)     | `""`                              |
+| `marquez.extraEnv`            | Additional env vars for the Marquez container        | `[]`                                   |
+| `marquez.extraEnvFrom`        | Additional envFrom sources for the Marquez container | `[]`                                   |
 | `marquez.extraContainers`     | Sidecar containers to add to the Marquez pod         | `[]`                                   |
 | `marquez.pdb.create`          | Create PodDisruptionBudget                           | `false`                                |
 | `marquez.podSecurityContext`  | Pod security context                                 | `{}`                                   |
@@ -104,6 +111,33 @@ The command removes all the Kubernetes components associated with the chart and 
 | `serviceAccount.create` | Create ServiceAccount                 | `true`  |
 | `serviceAccount.name`   | ServiceAccount name to use            | `""`    |
 | `ingress.enabled`       | Enable Ingress                        | `false` |
+
+## Database credentials from an existing secret
+
+When `marquez.existingSecretName` is set, the database password is read from that
+secret (key `marquez-db-password` by default). The remaining connection settings
+can also be read from the same secret by naming their keys in
+`marquez.existingSecretKeys`; any key left empty falls back to the plain values
+under `marquez.db`.
+
+This makes the chart work with secrets managed by external operators. For
+example, [movetokube/postgres-operator](https://github.com/movetokube/postgres-operator)
+generates the role name and password and stores the connection details in a
+secret with the keys `HOSTNAME`, `PORT`, `DATABASE_NAME`, `ROLE`, and `PASSWORD`:
+
+```yaml
+marquez:
+  existingSecretName: postgres-marquez  # secret created by the operator
+  existingSecretKeys:
+    hostKey: HOSTNAME
+    portKey: PORT
+    databaseKey: DATABASE_NAME
+    userKey: ROLE
+    passwordKey: PASSWORD
+```
+
+No values under `marquez.db` are used in that setup, and credential rotation by
+the operator is picked up on the next pod restart.
 
 ## Local Installation Guide
 

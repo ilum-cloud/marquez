@@ -101,3 +101,75 @@ Create the name of the service account to use
 {{- default "default" .Values.serviceAccount.name }}
 {{- end }}
 {{- end }}
+
+{{/*
+Database environment variables (POSTGRES_HOST/PORT/DB/USER) for the Marquez
+containers. Each value is read from the existing secret when the matching key
+in marquez.existingSecretKeys is set; otherwise it falls back to the bundled
+PostgreSQL subchart or the plain values under marquez.db.
+*/}}
+{{- define "ilum-marquez.databaseEnv" -}}
+{{- $keys := default dict .Values.marquez.existingSecretKeys -}}
+- name: POSTGRES_HOST
+{{- if and .Values.marquez.existingSecretName $keys.hostKey }}
+  valueFrom:
+    secretKeyRef:
+      name: {{ .Values.marquez.existingSecretName }}
+      key: {{ $keys.hostKey }}
+{{- else if .Values.postgresql.enabled }}
+  value: {{ printf "%s-%s" .Release.Name "postgresql" | trunc 63 | trimSuffix "-" | quote }}
+{{- else }}
+  value: {{ .Values.marquez.db.host | quote }}
+{{- end }}
+- name: POSTGRES_PORT
+{{- if and .Values.marquez.existingSecretName $keys.portKey }}
+  valueFrom:
+    secretKeyRef:
+      name: {{ .Values.marquez.existingSecretName }}
+      key: {{ $keys.portKey }}
+{{- else if .Values.postgresql.enabled }}
+  value: "5432"
+{{- else }}
+  value: {{ .Values.marquez.db.port | quote }}
+{{- end }}
+- name: POSTGRES_DB
+{{- if and .Values.marquez.existingSecretName $keys.databaseKey }}
+  valueFrom:
+    secretKeyRef:
+      name: {{ .Values.marquez.existingSecretName }}
+      key: {{ $keys.databaseKey }}
+{{- else if .Values.postgresql.enabled }}
+  value: {{ .Values.postgresql.auth.database | quote }}
+{{- else }}
+  value: {{ .Values.marquez.db.name | quote }}
+{{- end }}
+- name: POSTGRES_USER
+{{- if and .Values.marquez.existingSecretName $keys.userKey }}
+  valueFrom:
+    secretKeyRef:
+      name: {{ .Values.marquez.existingSecretName }}
+      key: {{ $keys.userKey }}
+{{- else if .Values.postgresql.enabled }}
+  value: {{ .Values.postgresql.auth.username | quote }}
+{{- else }}
+  value: {{ .Values.marquez.db.user | quote }}
+{{- end }}
+{{- end }}
+
+{{/*
+secretKeyRef pointing at the database password.
+*/}}
+{{- define "ilum-marquez.databasePasswordSecretKeyRef" -}}
+{{- $keys := default dict .Values.marquez.existingSecretKeys -}}
+secretKeyRef:
+{{- if .Values.marquez.existingSecretName }}
+  name: {{ .Values.marquez.existingSecretName }}
+  key: {{ default "marquez-db-password" $keys.passwordKey }}
+{{- else if .Values.postgresql.enabled }}
+  name: {{ printf "%s-%s" .Release.Name "postgresql" | trunc 63 | trimSuffix "-" }}
+  key: password
+{{- else }}
+  name: {{ include "ilum-marquez.fullname" . }}
+  key: marquez-db-password
+{{- end }}
+{{- end }}

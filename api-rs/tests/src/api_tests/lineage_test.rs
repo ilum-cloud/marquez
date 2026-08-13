@@ -412,18 +412,12 @@ async fn lineage_depth_parameter_limits_traversal() {
 
     // depth=1 from job_a: should see job_a + ds_ab + job_b but NOT ds_bc or job_c
     let node_id = format!("job:{}:{}", ns, job_a);
-    let url = format!(
-        "{}/api/v1/lineage?nodeId={}&depth=1",
-        app.base_url, node_id
-    );
+    let url = format!("{}/api/v1/lineage?nodeId={}&depth=1", app.base_url, node_id);
     let resp = app.client.get(&url).send().await.unwrap();
     assert_eq!(resp.status(), 200);
     let body: Value = resp.json().await.unwrap();
     let graph = body["graph"].as_array().expect("graph array");
-    let node_ids: Vec<&str> = graph
-        .iter()
-        .filter_map(|n| n["id"].as_str())
-        .collect();
+    let node_ids: Vec<&str> = graph.iter().filter_map(|n| n["id"].as_str()).collect();
     assert!(
         node_ids.iter().any(|id| id.contains(&job_a)),
         "depth=1 should include job_a"
@@ -447,10 +441,7 @@ async fn lineage_depth_parameter_limits_traversal() {
     assert_eq!(resp.status(), 200);
     let body: Value = resp.json().await.unwrap();
     let graph = body["graph"].as_array().expect("graph array");
-    let node_ids: Vec<&str> = graph
-        .iter()
-        .filter_map(|n| n["id"].as_str())
-        .collect();
+    let node_ids: Vec<&str> = graph.iter().filter_map(|n| n["id"].as_str()).collect();
     assert!(
         node_ids.iter().any(|id| id.contains(&job_c)),
         "depth=10 should include job_c. Nodes: {:?}",

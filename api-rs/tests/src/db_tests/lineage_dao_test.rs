@@ -248,9 +248,17 @@ async fn get_current_runs_with_facets_flat_format() {
         .unwrap();
 
     let facet_value = serde_json::json!({"sql": {"query": "SELECT 1"}});
-    facets::insert_run_facet(&db.pool, now, run_row.uuid, now, "COMPLETE", "sql", &facet_value)
-        .await
-        .unwrap();
+    facets::insert_run_facet(
+        &db.pool,
+        now,
+        run_row.uuid,
+        now,
+        "COMPLETE",
+        "sql",
+        &facet_value,
+    )
+    .await
+    .unwrap();
 
     let rows = lineage::get_current_runs_with_facets(&db.pool, &[job_row.uuid])
         .await

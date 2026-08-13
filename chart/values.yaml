@@ -56,9 +56,31 @@ marquez:
 
   ## Name of the existing secret containing credentials for the Marquez installation.
   ## When this is specified, it will take precedence over the values configured in the 'db' section.
-  ## The secret must contain the key 'marquez-db-password'.
+  ## By default the secret must contain the key 'marquez-db-password'; see existingSecretKeys.
   ##
   existingSecretName: ""
+
+  ## Keys read from the existing secret. Only used when existingSecretName is set.
+  ## 'passwordKey' must exist in the secret. The remaining keys are optional: when
+  ## a key name is set, the corresponding connection setting is read from the
+  ## secret instead of the 'db' section below. This lets operator-managed secrets
+  ## (e.g. movetokube/postgres-operator, which generates role names and passwords)
+  ## drive the whole database configuration:
+  ##
+  ##   existingSecretName: postgres-marquez
+  ##   existingSecretKeys:
+  ##     hostKey: HOSTNAME
+  ##     portKey: PORT
+  ##     databaseKey: DATABASE_NAME
+  ##     userKey: ROLE
+  ##     passwordKey: PASSWORD
+  ##
+  existingSecretKeys:
+    passwordKey: marquez-db-password
+    hostKey: ""
+    portKey: ""
+    databaseKey: ""
+    userKey: ""
 
   ## Pod Disruption Budget configuration
   ##
@@ -86,6 +108,19 @@ marquez:
   ## Extra containers to add to the Marquez pod
   ##
   extraContainers: []
+
+  ## Additional environment variables for the Marquez container
+  ##
+  extraEnv: []
+  ## - name: MARQUEZ_SEARCH__ENABLED
+  ##   value: "true"
+
+  ## Additional envFrom sources (ConfigMaps/Secrets) for the Marquez container.
+  ## Note: variables defined via 'env' take precedence over envFrom in Kubernetes.
+  ##
+  extraEnvFrom: []
+  ## - secretRef:
+  ##     name: my-secret
 
   ## Postgres database settings where Marquez data will persist
   ## Only used if postgresql.enabled is false

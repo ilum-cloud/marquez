@@ -74,24 +74,10 @@ spec:
               done
               echo "Database ${POSTGRES_DB} is ready!"
           env:
-            - name: POSTGRES_HOST
-              value: {{ .Values.marquez.db.host | quote }}
-            - name: POSTGRES_PORT
-              value: {{ .Values.marquez.db.port | quote }}
-            - name: POSTGRES_USER
-              value: {{ .Values.marquez.db.user | quote }}
+            {{- include "ilum-marquez.databaseEnv" . | nindent 12 }}
             - name: PGPASSWORD
               valueFrom:
-                secretKeyRef:
-                  {{- if .Values.marquez.existingSecretName }}
-                  name: {{ .Values.marquez.existingSecretName }}
-                  key: marquez-db-password
-                  {{- else }}
-                  name: {{ include "ilum-marquez.fullname" . }}
-                  key: marquez-db-password
-                  {{- end }}
-            - name: POSTGRES_DB
-              value: {{ .Values.marquez.db.name | quote }}
+                {{- include "ilum-marquez.databasePasswordSecretKeyRef" . | nindent 16 }}
         {{- end }}
       containers:
         - name: {{ .Chart.Name }}
@@ -127,29 +113,28 @@ spec:
               value: {{ 5001 | quote }}
             - name: MARQUEZ_CONFIG
               value: /usr/src/app/config.yml
-            - name: POSTGRES_HOST
-              value: {{ if .Values.postgresql.enabled }}{{ printf "%s-%s" .Release.Name "postgresql" | trunc 63 | trimSuffix "-" }}{{ else }}{{ .Values.marquez.db.host | quote }}{{ end }}
-            - name: POSTGRES_PORT
-              value: {{ if .Values.postgresql.enabled }}{{ "5432" | quote }}{{ else }}{{ .Values.marquez.db.port | quote }}{{ end }}
-            - name: POSTGRES_DB
-              value: {{ if .Values.postgresql.enabled }}{{ .Values.postgresql.auth.database | quote }}{{ else }}{{ .Values.marquez.db.name | quote }}{{ end }}
-            - name: POSTGRES_USER
-              value: {{ if .Values.postgresql.enabled }}{{ .Values.postgresql.auth.username | quote }}{{ else }}{{ .Values.marquez.db.user | quote }}{{ end }}
+            {{- include "ilum-marquez.databaseEnv" . | nindent 12 }}
             - name: POSTGRES_PASSWORD
               valueFrom:
-                secretKeyRef:
-                  {{- if .Values.marquez.existingSecretName }}
-                  name: {{ .Values.marquez.existingSecretName }}
-                  key: marquez-db-password
-                  {{- else if .Values.postgresql.enabled }}
-                  name: {{ printf "%s-%s" .Release.Name "postgresql" | trunc 63 | trimSuffix "-" }}
-                  key: password
-                  {{- else }}
-                  name: {{ include "ilum-marquez.fullname" . }}
-                  key: marquez-db-password
-                  {{- end }}
+                {{- include "ilum-marquez.databasePasswordSecretKeyRef" . | nindent 16 }}
             - name: MIGRATE_ON_STARTUP
               value: {{ .Values.marquez.migrateOnStartup | quote }}
+            {{- if .Values.marquez.dbRetention.enabled }}
+            # Rust backend reads retention from env; Java backend reads dbRetention from the config file.
+            - name: MARQUEZ_DB_RETENTION__FREQUENCY_MINS
+              value: {{ .Values.marquez.dbRetention.frequencyMins | quote }}
+            - name: MARQUEZ_DB_RETENTION__NUMBER_OF_ROWS_PER_BATCH
+              value: {{ .Values.marquez.dbRetention.numberOfRowsPerBatch | quote }}
+            - name: MARQUEZ_DB_RETENTION__RETENTION_DAYS
+              value: {{ .Values.marquez.dbRetention.retentionDays | quote }}
+            {{- end }}
+            {{- with .Values.marquez.extraEnv }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          {{- with .Values.marquez.extraEnvFrom }}
+          envFrom:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
           {{- if .Values.marquez.resources }}
           resources: {{- toYaml .Values.marquez.resources | nindent 12 }}
           {{- end }}

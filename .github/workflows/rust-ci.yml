@@ -2,13 +2,13 @@ name: Rust CI
 
 on:
   push:
-    branches: [rust]
+    branches: [main]
     paths:
       - 'api-rs/**'
       - 'Dockerfile'
       - '.github/workflows/rust-ci.yml'
   pull_request:
-    branches: [rust]
+    branches: [main]
     paths:
       - 'api-rs/**'
       - 'Dockerfile'
