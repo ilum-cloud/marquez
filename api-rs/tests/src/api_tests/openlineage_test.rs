@@ -1408,12 +1408,11 @@ async fn streaming_heartbeat_preserves_io_mappings() {
 
     // Lineage should still show the datasets from START
     let graph = get_lineage_graph(&app, &ns, &job_name).await;
-    let job_node = graph
-        .iter()
-        .find(|n| n["type"] == "JOB")
-        .expect("job node");
+    let job_node = graph.iter().find(|n| n["type"] == "JOB").expect("job node");
     let inputs = job_node["data"]["inputs"].as_array().expect("inputs array");
-    let outputs = job_node["data"]["outputs"].as_array().expect("outputs array");
+    let outputs = job_node["data"]["outputs"]
+        .as_array()
+        .expect("outputs array");
 
     assert_eq!(
         inputs.len(),
