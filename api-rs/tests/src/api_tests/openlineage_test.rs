@@ -2520,3 +2520,117 @@ async fn dataset_fields_reflect_current_version() {
     );
     assert_eq!(list_fields[0]["name"], "id");
 }
+
+/// Helper: GET the runs page (totalCount + runs) for a job.
+async fn get_job_runs(app: &TestApp, ns: &str, job: &str) -> Value {
+    let url = format!(
+        "{}/api/v1/namespaces/{}/jobs/{}/runs?limit=10",
+        app.base_url,
+        encode(ns),
+        encode(job)
+    );
+    let resp = app.client.get(&url).send().await.expect("get job runs");
+    assert_eq!(resp.status(), 200, "get job runs failed: {}", resp.status());
+    resp.json().await.expect("parse runs json")
+}
+
+/// A run whose very first event already carries a ParentRunFacet whose parent
+/// name is not a prefix of the job name (the Spark application pattern with a
+/// static parent-run config). The job is stored under its parent-qualified
+/// canonical name; the runs list and totalCount must agree under that name
+/// instead of counting a run that is never listed (issue #21).
+#[tokio::test]
+async fn parent_facet_on_first_event_runs_list_consistent() {
+    let app = TestApp::new().await;
+    let ns = generators::new_namespace_name();
+    let parent_name = format!("dag_{}", rand::random_range(0..u32::MAX));
+    let child_name = format!("spark_app_{}", rand::random_range(0..u32::MAX));
+    let run_id = Uuid::new_v4().to_string();
+    let parent_run_id = Uuid::new_v4().to_string();
+
+    let parent_facet = json!({
+        "parent": {
+            "_producer": "test",
+            "_schemaURL": "test",
+            "run": { "runId": parent_run_id },
+            "job": { "namespace": ns, "name": parent_name }
+        }
+    });
+    let event = make_run_event(
+        "COMPLETE",
+        &ns,
+        &child_name,
+        &run_id,
+        vec![],
+        vec![],
+        Some(parent_facet),
+        None,
+    );
+    post_lineage(&app, &event).await;
+
+    // Listed and counted under the canonical parent-qualified name.
+    let canonical = format!("{parent_name}.{child_name}");
+    let page = get_job_runs(&app, &ns, &canonical).await;
+    assert_eq!(page["totalCount"].as_i64(), Some(1));
+    let runs = page["runs"].as_array().expect("runs array");
+    assert_eq!(runs.len(), 1, "count and list must agree: {page}");
+    assert_eq!(runs[0]["id"].as_str(), Some(run_id.as_str()));
+
+    // The raw event name is not a job identity; count and list agree on empty.
+    let plain = get_job_runs(&app, &ns, &child_name).await;
+    assert_eq!(plain["totalCount"].as_i64(), Some(0));
+    assert_eq!(plain["runs"].as_array().expect("runs array").len(), 0);
+}
+
+/// A bare START first, with the parent facet only arriving on COMPLETE: the
+/// run stays attached to the plain-named job created by the first event and
+/// remains consistently counted and listed under that name (issue #21).
+#[tokio::test]
+async fn parent_facet_on_later_event_runs_list_consistent() {
+    let app = TestApp::new().await;
+    let ns = generators::new_namespace_name();
+    let parent_name = format!("dag_{}", rand::random_range(0..u32::MAX));
+    let child_name = format!("spark_app_{}", rand::random_range(0..u32::MAX));
+    let run_id = Uuid::new_v4().to_string();
+    let parent_run_id = Uuid::new_v4().to_string();
+
+    let start = make_run_event(
+        "START",
+        &ns,
+        &child_name,
+        &run_id,
+        vec![],
+        vec![],
+        None,
+        None,
+    );
+    post_lineage(&app, &start).await;
+
+    let parent_facet = json!({
+        "parent": {
+            "_producer": "test",
+            "_schemaURL": "test",
+            "run": { "runId": parent_run_id },
+            "job": { "namespace": ns, "name": parent_name }
+        }
+    });
+    let complete = make_run_event(
+        "COMPLETE",
+        &ns,
+        &child_name,
+        &run_id,
+        vec![],
+        vec![],
+        Some(parent_facet),
+        None,
+    );
+    post_lineage(&app, &complete).await;
+
+    let page = get_job_runs(&app, &ns, &child_name).await;
+    assert_eq!(page["totalCount"].as_i64(), Some(1));
+    assert_eq!(
+        page["runs"].as_array().expect("runs array").len(),
+        1,
+        "count and list must agree: {page}"
+    );
+}

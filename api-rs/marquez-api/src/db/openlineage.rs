@@ -815,7 +815,10 @@ pub async fn update_base_marquez_model(
         ended_at,
         None,
         &ns_name,
-        job_name,
+        // Canonical name from the jobs_view trigger (parent-qualified for jobs
+        // created with a parent facet), not the raw event name: runs.job_name
+        // must match jobs.name or list and count queries disagree.
+        &job_row.name,
         location,
         None,
     )

@@ -358,10 +358,13 @@ pub async fn find_by_latest_job(
     offset: i32,
 ) -> Result<Vec<ExtendedRunWithFacetsRow>, sqlx::Error> {
     sqlx::query_as::<_, ExtendedRunWithFacetsRow>(
-        "WITH target_runs AS ( \
+        "WITH filtered_jobs AS ( \
+            SELECT jv.uuid FROM jobs_view jv \
+            WHERE jv.namespace_name = $1 AND (jv.name = $2 OR $2 = ANY(jv.aliases)) \
+        ), \
+        target_runs AS ( \
             SELECT r.uuid FROM runs_view r \
-            INNER JOIN jobs_view j ON j.namespace_name = r.namespace_name AND j.name = r.job_name \
-            WHERE j.namespace_name = $1 AND (j.name = $2 OR $2 = ANY(j.aliases)) \
+            INNER JOIN filtered_jobs fj ON r.job_uuid = fj.uuid \
             ORDER BY r.transitioned_at DESC NULLS LAST, r.started_at DESC NULLS LAST, r.uuid ASC \
             LIMIT $3 OFFSET $4 \
         ) \
