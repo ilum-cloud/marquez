@@ -7,6 +7,8 @@ mod dataset_field_dao_test;
 #[cfg(test)]
 mod dataset_version_dao_test;
 #[cfg(test)]
+mod db_config_test;
+#[cfg(test)]
 mod edge_case_parity_test;
 #[cfg(test)]
 mod facets_dao_test;

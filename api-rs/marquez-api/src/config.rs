@@ -3,6 +3,7 @@
 
 use marquez_search::SearchConfig;
 use serde::Deserialize;
+use sqlx::postgres::PgConnectOptions;
 
 fn default_true() -> bool {
     true
@@ -143,6 +144,20 @@ impl Default for DbConfig {
             password: default_db_password(),
             max_pool_size: default_pool_size(),
         }
+    }
+}
+
+impl DbConfig {
+    /// Connection options built field by field rather than from a formatted
+    /// `postgres://` URL, so credentials containing URL-reserved characters
+    /// (`/`, `?`, `#`, `%`, ...) are passed to Postgres verbatim.
+    pub fn connect_options(&self) -> PgConnectOptions {
+        PgConnectOptions::new_without_pgpass()
+            .host(&self.host)
+            .port(self.port)
+            .username(&self.user)
+            .password(&self.password)
+            .database(&self.name)
     }
 }
 

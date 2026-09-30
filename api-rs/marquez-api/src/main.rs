@@ -94,10 +94,7 @@ fn load_config(path: &PathBuf) -> MarquezConfig {
 }
 
 async fn connect_db(config: &MarquezConfig) -> sqlx::PgPool {
-    let db_url = format!(
-        "postgres://{}:{}@{}:{}/{}",
-        config.db.user, config.db.password, config.db.host, config.db.port, config.db.name
-    );
+    let connect_options = config.db.connect_options();
 
     let max_retries = 5;
     let mut delay = std::time::Duration::from_secs(1);
@@ -105,7 +102,7 @@ async fn connect_db(config: &MarquezConfig) -> sqlx::PgPool {
     for attempt in 1..=max_retries {
         match PgPoolOptions::new()
             .max_connections(config.db.max_pool_size)
-            .connect(&db_url)
+            .connect_with(connect_options.clone())
             .await
         {
             Ok(pool) => {
