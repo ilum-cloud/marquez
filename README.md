@@ -106,7 +106,8 @@ Versions of Marquez are compatible with OpenLineage unless noted otherwise. We e
 | **Marquez**                                                                                      | **OpenLineage**                                               | **Status**    |
 |--------------------------------------------------------------------------------------------------|---------------------------------------------------------------|---------------|
 | [`UNRELEASED`](https://github.com/ilum-cloud/marquez/blob/main/CHANGELOG.md#unreleased)          | [`2-0-2`](https://openlineage.io/spec/2-0-2/OpenLineage.json) | `CURRENT`     |
-| [`0.54.0`](https://github.com/ilum-cloud/marquez/blob/main/CHANGELOG.md#0540---2026-03-02)       | [`2-0-2`](https://openlineage.io/spec/2-0-2/OpenLineage.json) | `RECOMMENDED` |
+| [`0.54.1`](https://github.com/ilum-cloud/marquez/blob/main/CHANGELOG.md#0541---2026-10-01)       | [`2-0-2`](https://openlineage.io/spec/2-0-2/OpenLineage.json) | `RECOMMENDED` |
+| [`0.54.0`](https://github.com/ilum-cloud/marquez/blob/main/CHANGELOG.md#0540---2026-03-02)       | [`2-0-2`](https://openlineage.io/spec/2-0-2/OpenLineage.json) | `DEPRECATED`  |
 | [`0.53.0`](https://github.com/ilum-cloud/marquez/blob/main/CHANGELOG.md#0530---2025-08-30)       | [`2-0-2`](https://openlineage.io/spec/2-0-2/OpenLineage.json) | `MAINTENANCE` |
 | [`0.50.0`](https://github.com/MarquezProject/marquez/blob/main/CHANGELOG.md#0500---2024-10-23)   | [`2-0-2`](https://openlineage.io/spec/2-0-2/OpenLineage.json) | `DEPRECATED`  |
 | [`0.49.0`](https://github.com/MarquezProject/marquez/blob/0.49.0/CHANGELOG.md#0490---2024-08-07) | [`2-0-2`](https://openlineage.io/spec/2-0-2/OpenLineage.json) | `DEPRECATED`  |

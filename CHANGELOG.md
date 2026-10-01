@@ -1,6 +1,29 @@
 # Changelog
 
-## [Unreleased](https://github.com/ilum-cloud/marquez/compare/0.54.0...HEAD)
+## [Unreleased](https://github.com/ilum-cloud/marquez/compare/0.54.1...HEAD)
+
+## [0.54.1](https://github.com/ilum-cloud/marquez/compare/0.54.0...0.54.1) - 2026-10-01
+
+### Added
+
+* chart: **New** `marquez.existingSecretKeys` to read the database host, port, name, user and password from an existing secret, so operator-managed secrets (e.g. movetokube/postgres-operator) can drive the whole DB config. Also adds `marquez.extraEnv` and `marquez.extraEnvFrom` passthroughs. [`#20`](https://github.com/ilum-cloud/marquez/pull/20) [@thijs-s](https://github.com/thijs-s) [@ilum-cloud](https://github.com/ilum-cloud)
+
+### Changed
+
+* chart: Default `ilum/marquez` and `ilum/marquez-web` images bumped to `0.54.1`. [@thijs-s](https://github.com/thijs-s) [@ilum-cloud](https://github.com/ilum-cloud)
+
+### Fixed
+
+* API: The API failed to connect with `invalid port number` when the database password contained `/`, `?` or `#`, and `%` sequences in it were silently decoded. Connection settings are now passed to the driver as-is instead of through a formatted URL. [`#23`](https://github.com/ilum-cloud/marquez/pull/23) [@thijs-s](https://github.com/thijs-s) [@ilum-cloud](https://github.com/ilum-cloud)
+* API: Runs whose first event carried a `ParentRunFacet` were counted but never listed (`{"totalCount": 1, "runs": []}`). Runs now store the canonical job name and the runs list resolves jobs by uuid. Migration `V77` repairs existing rows on startup. [`#22`](https://github.com/ilum-cloud/marquez/pull/22) [@thijs-s](https://github.com/thijs-s) [@ilum-cloud](https://github.com/ilum-cloud)
+  *Resolves [`#21`](https://github.com/ilum-cloud/marquez/issues/21).*
+* web: The dashboard no longer crashes with `Reduce of empty array with no initial value` when a job has no listed runs. [`#22`](https://github.com/ilum-cloud/marquez/pull/22) [@thijs-s](https://github.com/thijs-s) [@ilum-cloud](https://github.com/ilum-cloud)
+* web: Lineage and column lineage views returned 404 for datasets with URI-shaped namespaces (`s3://`, `gs://`, `jdbc:postgres://`, ...). The node id is now encoded once instead of twice. [`#17`](https://github.com/ilum-cloud/marquez/pull/17) [@thijs-s](https://github.com/thijs-s) [@ilum-cloud](https://github.com/ilum-cloud)
+* API: Streaming lineage in the Rust backend came back almost empty. [`#16`](https://github.com/ilum-cloud/marquez/pull/16) [@thijs-s](https://github.com/thijs-s) [@ilum-cloud](https://github.com/ilum-cloud)
+* API: Lineage SQL fixes: the `depth` parameter was ignored, run facets were double-wrapped, and CTAS datasets were missing from lineage. [`#15`](https://github.com/ilum-cloud/marquez/pull/15) [@thijs-s](https://github.com/thijs-s) [@ilum-cloud](https://github.com/ilum-cloud)
+* docker: The Rust entrypoint no longer overrides a mounted `MARQUEZ_CONFIG` with hardcoded defaults. Variables are only mapped when set, explicit `MARQUEZ_*` variables take precedence, and `MIGRATE_ON_STARTUP` is honored. The `db` config section now has defaults, so a partial config file still starts. [`#20`](https://github.com/ilum-cloud/marquez/pull/20) [@thijs-s](https://github.com/thijs-s) [@ilum-cloud](https://github.com/ilum-cloud)
+* chart: `dbRetention` settings now reach the Rust backend (passed as `MARQUEZ_DB_RETENTION__*` env vars). [`#20`](https://github.com/ilum-cloud/marquez/pull/20) [@thijs-s](https://github.com/thijs-s) [@ilum-cloud](https://github.com/ilum-cloud)
+* docker: `./docker/up.sh`, `down.sh`, `volumes.sh` and `migrate-db.sh` now work when run with `sh` (dash on WSL and Linux), shell scripts and Dockerfiles are pinned to LF line endings, and Git Bash path conversion no longer breaks the PostgreSQL version check on Windows. [`#19`](https://github.com/ilum-cloud/marquez/pull/19) [@thijs-s](https://github.com/thijs-s) [@ilum-cloud](https://github.com/ilum-cloud)
 
 ## [0.54.0](https://github.com/ilum-cloud/marquez/compare/0.53.0...0.54.0) - 2026-03-02
 
