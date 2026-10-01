@@ -47,7 +47,7 @@ marquez:
   image:
     registry: docker.io
     repository: ilum/marquez
-    tag: 0.54.0
+    tag: 0.54.1
     pullPolicy: IfNotPresent
 
   ## Image pull secrets
@@ -210,7 +210,7 @@ web:
   image:
     registry: docker.io
     repository: ilum/marquez-web
-    tag: 0.54.0
+    tag: 0.54.1
     pullPolicy: IfNotPresent
   
   ## Image pull secrets
