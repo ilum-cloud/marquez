@@ -241,6 +241,44 @@ pub async fn find_uuid(
     Ok(row.map(|(u,)| u))
 }
 
+/// Find the UUIDs of a dataset field by namespace, dataset name (or any of the
+/// dataset's symlink names) and field name.
+///
+/// Same SQL as Java's `DatasetFieldDao.findUuid(namespaceName, datasetName, name)`,
+/// which resolves a `datasetField:` node id for column lineage:
+/// ```sql
+/// SELECT df.uuid FROM dataset_fields df
+/// JOIN datasets_view AS d ON d.uuid = df.dataset_uuid
+/// WHERE CAST((:namespaceName, :datasetName) AS DATASET_NAME) = ANY(d.dataset_symlinks)
+/// AND df.name = :name
+/// ```
+///
+/// Java maps the result to `Optional<UUID>` and fails with "Multiple values for
+/// optional" (HTTP 500) once a field has changed type, because `dataset_fields`
+/// is unique on `(dataset_uuid, name, type)` and so holds one row per type.
+/// This returns every matching row instead, like `find_dataset_fields_uuids`
+/// does for the whole dataset.
+pub async fn find_uuids_by_dataset_name(
+    pool: &PgPool,
+    namespace_name: &str,
+    dataset_name: &str,
+    field_name: &str,
+) -> Result<Vec<Uuid>, sqlx::Error> {
+    let rows: Vec<(Uuid,)> = sqlx::query_as(
+        "SELECT df.uuid \
+         FROM dataset_fields df \
+         JOIN datasets_view AS d ON d.uuid = df.dataset_uuid \
+         WHERE CAST(($1, $2) AS DATASET_NAME) = ANY(d.dataset_symlinks) \
+         AND df.name = $3",
+    )
+    .bind(namespace_name)
+    .bind(dataset_name)
+    .bind(field_name)
+    .fetch_all(pool)
+    .await?;
+    Ok(rows.into_iter().map(|(u,)| u).collect())
+}
+
 /// Batch insert field-to-version mappings.
 ///
 /// Each mapping is inserted individually with ON CONFLICT DO NOTHING.
@@ -332,10 +370,16 @@ pub async fn find_fields_uuids_by_job(
     Ok(rows.into_iter().map(|(u,)| u).collect())
 }
 
-/// Find field UUIDs with timestamps for a given job version.
+/// Find field UUIDs with timestamps for a given job version: the fields of
+/// the datasets written by runs of that job version, with each run's
+/// `created_at`.
 ///
-/// Joins `dataset_fields` through `dataset_versions` and `runs` to find all
-/// fields associated with runs that belong to the specified job version.
+/// Deliberately differs from Java's `DatasetFieldDao.findFieldsUuidsByJobVersion`,
+/// whose `JOIN runs_view r ON r.job_version_uuid = :jobVersion` never ties the
+/// run to `dataset_versions.run_uuid`. That makes it a cross join returning
+/// every versioned field in the database, so `job:ns:name#version` column
+/// lineage in Java includes datasets from unrelated namespaces. The run is
+/// correlated here the same way `find_fields_uuids_by_job` does it.
 pub async fn find_fields_uuids_by_job_version(
     pool: &PgPool,
     job_version: Uuid,
@@ -344,7 +388,8 @@ pub async fn find_fields_uuids_by_job_version(
         "SELECT dataset_fields.uuid, r.created_at \
          FROM dataset_fields \
          JOIN dataset_versions ON dataset_versions.dataset_uuid = dataset_fields.dataset_uuid \
-         JOIN runs_view r ON r.job_version_uuid = $1",
+         JOIN runs_view r ON r.uuid = dataset_versions.run_uuid \
+         WHERE r.job_version_uuid = $1",
     )
     .bind(job_version)
     .fetch_all(pool)
