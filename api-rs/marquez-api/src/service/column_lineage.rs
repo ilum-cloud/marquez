@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 
 use chrono::{DateTime, Utc};
+use serde_json::json;
 use sqlx::PgPool;
 use uuid::Uuid;
 
@@ -214,8 +215,6 @@ impl ColumnLineageService {
             field: String,
             field_type: Option<String>,
             dataset_version_uuid: Option<String>,
-            transformation_description: Option<String>,
-            transformation_type: Option<String>,
             input_fields: Vec<ParsedInputField>,
         }
 
@@ -265,8 +264,6 @@ impl ColumnLineageService {
                     field: row.field_name,
                     field_type: row.field_type,
                     dataset_version_uuid: row.dataset_version_uuid.map(|u| u.to_string()),
-                    transformation_description: None,
-                    transformation_type: None,
                     input_fields,
                 }
             })
@@ -312,88 +309,35 @@ impl ColumnLineageService {
                 node.dataset_version_uuid.as_deref(),
             );
 
-            // Build data payload matching Java's ColumnLineageNodeData
-            let mut data_map = serde_json::Map::new();
-            data_map.insert(
-                "namespace".to_string(),
-                serde_json::Value::String(node.namespace.clone()),
-            );
-            data_map.insert(
-                "dataset".to_string(),
-                serde_json::Value::String(node.dataset.clone()),
-            );
-            data_map.insert(
-                "field".to_string(),
-                serde_json::Value::String(node.field.clone()),
-            );
-            if let Some(ref dv) = node.dataset_version_uuid {
-                data_map.insert(
-                    "datasetVersion".to_string(),
-                    serde_json::Value::String(dv.to_string()),
-                );
-            }
-            if let Some(ref ft) = node.field_type {
-                data_map.insert(
-                    "fieldType".to_string(),
-                    serde_json::Value::String(ft.clone()),
-                );
-            }
-            if let Some(ref td) = node.transformation_description {
-                data_map.insert(
-                    "transformationDescription".to_string(),
-                    serde_json::Value::String(td.clone()),
-                );
-            }
-            if let Some(ref tt) = node.transformation_type {
-                data_map.insert(
-                    "transformationType".to_string(),
-                    serde_json::Value::String(tt.clone()),
-                );
-            }
-
-            // Build inputFields array in data
+            // Data payload as Java serializes ColumnLineageNodeData: every key,
+            // with explicit nulls (`None` -> null here). The node-level
+            // transformation keys come from Java's (deprecated) getters, which
+            // return the value of any one of the node's input fields.
+            let first_input = node.input_fields.first();
             let input_fields_json: Vec<serde_json::Value> = node
                 .input_fields
                 .iter()
                 .map(|inf| {
-                    let mut m = serde_json::Map::new();
-                    m.insert(
-                        "namespace".to_string(),
-                        serde_json::Value::String(inf.namespace.clone()),
-                    );
-                    m.insert(
-                        "dataset".to_string(),
-                        serde_json::Value::String(inf.dataset.clone()),
-                    );
-                    m.insert(
-                        "field".to_string(),
-                        serde_json::Value::String(inf.field.clone()),
-                    );
-                    if let Some(ref dv) = inf.dataset_version {
-                        m.insert(
-                            "datasetVersion".to_string(),
-                            serde_json::Value::String(dv.clone()),
-                        );
-                    }
-                    if let Some(ref td) = inf.transformation_description {
-                        m.insert(
-                            "transformationDescription".to_string(),
-                            serde_json::Value::String(td.clone()),
-                        );
-                    }
-                    if let Some(ref tt) = inf.transformation_type {
-                        m.insert(
-                            "transformationType".to_string(),
-                            serde_json::Value::String(tt.clone()),
-                        );
-                    }
-                    serde_json::Value::Object(m)
+                    json!({
+                        "namespace": inf.namespace,
+                        "dataset": inf.dataset,
+                        "datasetVersion": inf.dataset_version,
+                        "field": inf.field,
+                        "transformationDescription": inf.transformation_description,
+                        "transformationType": inf.transformation_type,
+                    })
                 })
                 .collect();
-            data_map.insert(
-                "inputFields".to_string(),
-                serde_json::Value::Array(input_fields_json),
-            );
+            let data = json!({
+                "namespace": node.namespace,
+                "dataset": node.dataset,
+                "datasetVersion": node.dataset_version_uuid,
+                "field": node.field,
+                "fieldType": node.field_type,
+                "transformationDescription": first_input.and_then(|i| i.transformation_description.as_deref()),
+                "transformationType": first_input.and_then(|i| i.transformation_type.as_deref()),
+                "inputFields": input_fields_json,
+            });
 
             let node_in_edges: Vec<Edge> = in_edges
                 .get(&node_id_str)
@@ -426,7 +370,7 @@ impl ColumnLineageService {
                 Node {
                     id: NodeId::new(node_id_str),
                     type_: NodeType::DatasetField,
-                    data: Some(serde_json::Value::Object(data_map)),
+                    data: Some(data),
                     in_edges: node_in_edges,
                     out_edges: node_out_edges,
                 },
@@ -441,20 +385,19 @@ impl ColumnLineageService {
                     input.dataset_version.as_deref(),
                 );
                 if !node_map.contains_key(&input_id) {
-                    let mut input_data = serde_json::Map::new();
-                    input_data.insert(
-                        "namespace".to_string(),
-                        serde_json::Value::String(input.namespace.clone()),
-                    );
-                    input_data.insert(
-                        "dataset".to_string(),
-                        serde_json::Value::String(input.dataset.clone()),
-                    );
-                    input_data.insert(
-                        "field".to_string(),
-                        serde_json::Value::String(input.field.clone()),
-                    );
-                    input_data.insert("inputFields".to_string(), serde_json::Value::Array(vec![]));
+                    // Java's ColumnLineageNodeData(InputFieldNodeData): the input's
+                    // version, an empty fieldType and no inputs. With no inputs the
+                    // transformation getters serialize as null.
+                    let input_data = json!({
+                        "namespace": input.namespace,
+                        "dataset": input.dataset,
+                        "datasetVersion": input.dataset_version,
+                        "field": input.field,
+                        "fieldType": "",
+                        "transformationDescription": null,
+                        "transformationType": null,
+                        "inputFields": [],
+                    });
 
                     let input_in_edges: Vec<Edge> = in_edges
                         .get(&input_id)
@@ -487,7 +430,7 @@ impl ColumnLineageService {
                         Node {
                             id: NodeId::new(input_id),
                             type_: NodeType::DatasetField,
-                            data: Some(serde_json::Value::Object(input_data)),
+                            data: Some(input_data),
                             in_edges: input_in_edges,
                             out_edges: input_out_edges,
                         },

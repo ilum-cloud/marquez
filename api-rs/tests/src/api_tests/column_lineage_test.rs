@@ -1112,3 +1112,87 @@ async fn column_lineage_run_node_id_returns_400() {
     let (status, _) = column_lineage_ids(&app, &format!("run:{}", Uuid::new_v4()), false).await;
     assert_eq!(status, 400);
 }
+
+/// Node `data` has the same keys as Java's `ColumnLineageNodeData`, including
+/// explicit nulls, also on the stub nodes created for input fields.
+#[tokio::test]
+async fn column_lineage_node_data_matches_java_shape() {
+    let app = TestApp::new().await;
+    let ns = generators::new_namespace_name();
+    let input_ds = format!("input_ds_{}", rand::random_range(0..u32::MAX));
+    let output_ds = format!("output_ds_{}", rand::random_range(0..u32::MAX));
+    post_lineage(
+        &app,
+        &make_column_lineage_event(
+            &ns,
+            &generators::new_job_name(),
+            &Uuid::new_v4().to_string(),
+            &ns,
+            &input_ds,
+            vec![json!({"name": "col_a", "type": "VARCHAR"})],
+            &ns,
+            &output_ds,
+            vec![json!({"name": "col_b", "type": "VARCHAR"})],
+        ),
+    )
+    .await;
+    let input_version =
+        current_version(&app, &format!("{}/datasets/{input_ds}", encode(&ns))).await;
+    let output_version =
+        current_version(&app, &format!("{}/datasets/{output_ds}", encode(&ns))).await;
+
+    let graph = get_column_lineage_graph(&app, &ns, &output_ds).await;
+    let node = |field: &str| {
+        graph
+            .iter()
+            .find(|n| n["data"]["field"] == field)
+            .unwrap_or_else(|| panic!("no node for {field}: {graph:?}"))["data"]
+            .clone()
+    };
+    let keys = |v: &Value| {
+        let mut k: Vec<String> = v.as_object().expect("object").keys().cloned().collect();
+        k.sort();
+        k
+    };
+    let node_keys = vec![
+        "dataset",
+        "datasetVersion",
+        "field",
+        "fieldType",
+        "inputFields",
+        "namespace",
+        "transformationDescription",
+        "transformationType",
+    ];
+    let input_field_keys = vec![
+        "dataset",
+        "datasetVersion",
+        "field",
+        "namespace",
+        "transformationDescription",
+        "transformationType",
+    ];
+
+    let output = node("col_b");
+    assert_eq!(keys(&output), node_keys);
+    assert_eq!(output["datasetVersion"], output_version.as_str());
+    assert_eq!(output["fieldType"], "VARCHAR");
+    // Java's getters take the node-level transformation from an input field.
+    assert_eq!(output["transformationDescription"], "identity");
+    assert_eq!(output["transformationType"], "IDENTITY");
+    let input_field = &output["inputFields"][0];
+    assert_eq!(keys(input_field), input_field_keys);
+    assert_eq!(input_field["datasetVersion"], input_version.as_str());
+    assert_eq!(input_field["transformationDescription"], "identity");
+    assert_eq!(input_field["transformationType"], "IDENTITY");
+
+    // Stub node for the input field, as in Java's ColumnLineageNodeData(InputFieldNodeData).
+    // It has no input fields, so the transformation keys are null.
+    let stub = node("col_a");
+    assert_eq!(keys(&stub), node_keys);
+    assert_eq!(stub["datasetVersion"], input_version.as_str());
+    assert_eq!(stub["fieldType"], "");
+    assert!(stub["transformationDescription"].is_null());
+    assert!(stub["transformationType"].is_null());
+    assert_eq!(stub["inputFields"], json!([]));
+}
