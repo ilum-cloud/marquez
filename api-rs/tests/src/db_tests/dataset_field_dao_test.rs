@@ -148,6 +148,67 @@ async fn find_uuid_not_found() {
 }
 
 #[tokio::test]
+async fn find_uuids_by_dataset_name() {
+    let db = TestDb::new().await;
+    let ns = fixtures::create_namespace(&db.pool).await;
+    let src = fixtures::create_source(&db.pool).await;
+    let ds = fixtures::create_dataset(&db.pool, &ns, &src).await;
+    let field = fixtures::create_dataset_field(&db.pool, &ds).await;
+    let _other = fixtures::create_dataset_field(&db.pool, &ds).await;
+
+    let found =
+        dataset_field::find_uuids_by_dataset_name(&db.pool, &ns.name, &ds.name, &field.name)
+            .await
+            .unwrap();
+    assert_eq!(found, vec![field.uuid]);
+
+    for (namespace, dataset, name) in [
+        (ns.name.as_str(), ds.name.as_str(), "nonexistent"),
+        (ns.name.as_str(), "nonexistent", field.name.as_str()),
+        ("nonexistent", ds.name.as_str(), field.name.as_str()),
+    ] {
+        let found = dataset_field::find_uuids_by_dataset_name(&db.pool, namespace, dataset, name)
+            .await
+            .unwrap();
+        assert!(found.is_empty(), "{namespace}/{dataset}/{name}");
+    }
+}
+
+/// A field whose type changed has one `dataset_fields` row per type. Java's
+/// `findUuid` answers 500 ("Multiple values for optional") in that case; the
+/// Rust lookup returns every row.
+#[tokio::test]
+async fn find_uuids_by_dataset_name_after_type_change() {
+    let db = TestDb::new().await;
+    let ns = fixtures::create_namespace(&db.pool).await;
+    let src = fixtures::create_source(&db.pool).await;
+    let ds = fixtures::create_dataset(&db.pool, &ns, &src).await;
+    let name = generators::new_field_name();
+    let mut expected = Vec::new();
+    for field_type in ["VARCHAR", "INTEGER"] {
+        let row = dataset_field::upsert(
+            &db.pool,
+            Uuid::new_v4(),
+            Utc::now(),
+            &name,
+            Some(field_type),
+            None,
+            ds.uuid,
+        )
+        .await
+        .unwrap();
+        expected.push(row.uuid);
+    }
+
+    let mut found = dataset_field::find_uuids_by_dataset_name(&db.pool, &ns.name, &ds.name, &name)
+        .await
+        .unwrap();
+    found.sort();
+    expected.sort();
+    assert_eq!(found, expected);
+}
+
+#[tokio::test]
 async fn find_by_dataset_version() {
     let db = TestDb::new().await;
     let ns = fixtures::create_namespace(&db.pool).await;

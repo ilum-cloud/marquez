@@ -866,3 +866,249 @@ async fn dataset_event_output_facets_accepted() {
         "dataset version facets should contain schema"
     );
 }
+
+// ---------------------------------------------------------------------------
+// ilum-cloud/marquez#25: node ids other than `dataset:` were ignored
+// ---------------------------------------------------------------------------
+
+/// Run event writing `output` (with a schema and optional column lineage) from `inputs`.
+fn make_field_lineage_event(
+    ns: &str,
+    job: &str,
+    event_time: &str,
+    inputs: &[&str],
+    output: &str,
+    fields: &[&str],
+    lineage: Value,
+) -> Value {
+    let mut facets = json!({
+        "schema": {
+            "_producer": "test",
+            "_schemaURL": "test",
+            "fields": fields.iter().map(|f| json!({"name": f, "type": "VARCHAR"})).collect::<Vec<_>>()
+        }
+    });
+    if !lineage.is_null() {
+        facets["columnLineage"] =
+            json!({"_producer": "test", "_schemaURL": "test", "fields": lineage});
+    }
+    json!({
+        "eventType": "COMPLETE",
+        "eventTime": event_time,
+        "run": { "runId": Uuid::new_v4().to_string() },
+        "job": { "namespace": ns, "name": job },
+        "inputs": inputs.iter().map(|i| json!({"namespace": ns, "name": i})).collect::<Vec<_>>(),
+        "outputs": [{ "namespace": ns, "name": output, "facets": facets }],
+        "producer": "test-producer"
+    })
+}
+
+/// Seed `a.x -> b.y -> c.w` (plus `b.z` without lineage), written by jobs
+/// `write_a`, `write_b`, `write_c`.
+async fn seed_field_chain(app: &TestApp, ns: &str) {
+    let input = |ds: &str, field: &str| json!({"inputFields": [{"namespace": ns, "name": ds, "field": field}]});
+    for event in [
+        make_field_lineage_event(
+            ns,
+            "write_a",
+            "2024-01-01T00:00:00Z",
+            &[],
+            "a",
+            &["x"],
+            Value::Null,
+        ),
+        make_field_lineage_event(
+            ns,
+            "write_b",
+            "2024-01-01T00:01:00Z",
+            &["a"],
+            "b",
+            &["y", "z"],
+            json!({"y": input("a", "x")}),
+        ),
+        make_field_lineage_event(
+            ns,
+            "write_c",
+            "2024-01-01T00:02:00Z",
+            &["b"],
+            "c",
+            &["w"],
+            json!({"w": input("b", "y")}),
+        ),
+    ] {
+        post_lineage(app, &event).await;
+    }
+}
+
+/// GET /column-lineage; returns the status and the sorted node ids of the graph.
+async fn column_lineage_ids(
+    app: &TestApp,
+    node_id: &str,
+    with_downstream: bool,
+) -> (u16, Vec<String>) {
+    let url = format!(
+        "{}/api/v1/column-lineage?nodeId={}&depth=20&withDownstream={}",
+        app.base_url,
+        encode(node_id),
+        with_downstream
+    );
+    let resp = app
+        .client
+        .get(&url)
+        .send()
+        .await
+        .expect("get column lineage");
+    let status = resp.status().as_u16();
+    if status != 200 {
+        return (status, vec![]);
+    }
+    let body: Value = resp.json().await.expect("parse json");
+    let mut ids: Vec<String> = body["graph"]
+        .as_array()
+        .expect("graph array")
+        .iter()
+        .map(|n| n["id"].as_str().expect("node id").to_string())
+        .collect();
+    ids.sort();
+    (status, ids)
+}
+
+async fn current_version(app: &TestApp, path: &str) -> String {
+    let resp = app
+        .client
+        .get(format!("{}/api/v1/namespaces/{}", app.base_url, path))
+        .send()
+        .await
+        .expect("get current version");
+    assert_eq!(resp.status(), 200, "GET {path}");
+    let body: Value = resp.json().await.expect("parse json");
+    body["currentVersion"]
+        .as_str()
+        .expect("currentVersion")
+        .to_string()
+}
+
+#[tokio::test]
+async fn column_lineage_dataset_field_node_id() {
+    let app = TestApp::new().await;
+    let ns = generators::new_namespace_name();
+    seed_field_chain(&app, &ns).await;
+    let field = |ds: &str, f: &str| format!("datasetField:{ns}:{ds}:{f}");
+
+    // The reporter's case: every id the dataset query returns is queryable.
+    let (status, dataset_ids) = column_lineage_ids(&app, &format!("dataset:{ns}:b"), false).await;
+    assert_eq!(status, 200);
+    assert_eq!(dataset_ids, vec![field("a", "x"), field("b", "y")]);
+    for id in &dataset_ids {
+        let (status, _) = column_lineage_ids(&app, id, false).await;
+        assert_eq!(status, 200, "nodeId={id} was returned by the dataset query");
+    }
+
+    // Only that field's lineage, not the whole dataset's.
+    let (status, ids) = column_lineage_ids(&app, &field("b", "y"), false).await;
+    assert_eq!(status, 200);
+    assert_eq!(ids, vec![field("a", "x"), field("b", "y")]);
+
+    let (status, ids) = column_lineage_ids(&app, &field("b", "y"), true).await;
+    assert_eq!(status, 200);
+    assert_eq!(ids, vec![field("a", "x"), field("b", "y"), field("c", "w")]);
+
+    // Existing field without column lineage: empty graph (Java: 200 []).
+    let (status, ids) = column_lineage_ids(&app, &field("b", "z"), false).await;
+    assert_eq!(status, 200);
+    assert!(ids.is_empty(), "{ids:?}");
+
+    for missing in [field("b", "nope"), field("nope", "y")] {
+        let (status, _) = column_lineage_ids(&app, &missing, false).await;
+        assert_eq!(status, 404, "nodeId={missing}");
+    }
+}
+
+#[tokio::test]
+async fn column_lineage_job_node_id() {
+    let app = TestApp::new().await;
+    let ns = generators::new_namespace_name();
+    seed_field_chain(&app, &ns).await;
+
+    // Fields of the datasets written by the job's latest run.
+    let (status, ids) = column_lineage_ids(&app, &format!("job:{ns}:write_b"), false).await;
+    assert_eq!(status, 200);
+    assert_eq!(
+        ids,
+        vec![
+            format!("datasetField:{ns}:a:x"),
+            format!("datasetField:{ns}:b:y")
+        ]
+    );
+
+    let (status, _) = column_lineage_ids(&app, &format!("job:{ns}:nope"), false).await;
+    assert_eq!(status, 404);
+}
+
+#[tokio::test]
+async fn column_lineage_versioned_node_ids() {
+    let app = TestApp::new().await;
+    let ns = generators::new_namespace_name();
+    // Unrelated column lineage recorded before write_b runs (created_at is the
+    // ingest time, so posting order matters). Java's job-version lookup
+    // cross-joins and returns these fields too; Rust must not.
+    let other_ns = generators::new_namespace_name();
+    for event in [
+        make_field_lineage_event(
+            &other_ns,
+            "make_src",
+            "2024-01-01T00:00:20Z",
+            &[],
+            "src",
+            &["s"],
+            Value::Null,
+        ),
+        make_field_lineage_event(
+            &other_ns,
+            "unrelated",
+            "2024-01-01T00:00:30Z",
+            &["src"],
+            "dst",
+            &["d"],
+            json!({"d": {"inputFields": [{"namespace": other_ns, "name": "src", "field": "s"}]}}),
+        ),
+    ] {
+        post_lineage(&app, &event).await;
+    }
+    let (status, ids) = column_lineage_ids(&app, &format!("dataset:{other_ns}:dst"), false).await;
+    assert_eq!(status, 200);
+    assert_eq!(ids.len(), 2, "unrelated lineage must exist: {ids:?}");
+
+    seed_field_chain(&app, &ns).await;
+    let a_version = current_version(&app, &format!("{}/datasets/a", encode(&ns))).await;
+    let b_version = current_version(&app, &format!("{}/datasets/b", encode(&ns))).await;
+    let job_version = current_version(&app, &format!("{}/jobs/write_b", encode(&ns))).await;
+
+    // Versioned requests get versioned node ids, as in Java.
+    let expected = vec![
+        format!("datasetField:{ns}:a:x#{a_version}"),
+        format!("datasetField:{ns}:b:y#{b_version}"),
+    ];
+    for node_id in [
+        format!("dataset:{ns}:b#{b_version}"),
+        format!("datasetField:{ns}:b:y#{b_version}"),
+        format!("job:{ns}:write_b#{job_version}"),
+    ] {
+        let (status, ids) = column_lineage_ids(&app, &node_id, false).await;
+        assert_eq!(status, 200, "nodeId={node_id}");
+        assert_eq!(ids, expected, "nodeId={node_id}");
+    }
+
+    let (status, _) =
+        column_lineage_ids(&app, &format!("dataset:{ns}:b#{}", Uuid::new_v4()), false).await;
+    assert_eq!(status, 404, "unknown version");
+    let (status, _) = column_lineage_ids(&app, &format!("dataset:{ns}:b#not-a-uuid"), false).await;
+    assert_eq!(status, 400, "malformed version");
+}
+
+#[tokio::test]
+async fn column_lineage_run_node_id_returns_400() {
+    let app = TestApp::new().await;
+    let (status, _) = column_lineage_ids(&app, &format!("run:{}", Uuid::new_v4()), false).await;
+    assert_eq!(status, 400);
+}
